@@ -20,6 +20,7 @@
     "ioredis": "^5.4.0",
     "zod": "^3.23.0",
     "bcryptjs": "^2.4.3",
+    "fastify-plugin": "^4.5.1",
     "@lotos/types": "workspace:*"
   },
   "devDependencies": {
