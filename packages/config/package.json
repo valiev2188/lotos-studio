@@ -3,7 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
-    "./tsconfig/*": "./tsconfig/*.json",
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/node.json": "./tsconfig/node.json",
+    "./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
+    "./tsconfig/react-vite.json": "./tsconfig/react-vite.json",
     "./eslint/*": "./eslint/*.js",
     "./tailwind": "./tailwind/base.ts",
     "./prettier": "./prettier.config.js"
