@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "API Server",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@lotos/api", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "Landing Page",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@lotos/landing", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "Mini App",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@lotos/miniapp", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "Admin Panel",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@lotos/admin", "dev"],
+      "port": 5174
+    },
+    {
+      "name": "Telegram Bot",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@lotos/bot", "dev"],
+      "port": 0
+    }
+  ]
+}
