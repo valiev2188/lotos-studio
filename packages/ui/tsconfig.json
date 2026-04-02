@@ -1,0 +1,8 @@
+{
+  "extends": "@lotos/config/tsconfig/react-vite.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist"
+  },
+  "include": ["src"]
+}
