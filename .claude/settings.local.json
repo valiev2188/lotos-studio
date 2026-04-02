@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(pnpm install:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(pnpm --filter @lotos/api install)",
+      "Bash(pnpm prisma:*)",
+      "WebFetch(domain:esteticafitnesstudia.ru)"
+    ]
+  }
+}

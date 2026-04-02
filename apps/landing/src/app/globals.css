@@ -10,7 +10,7 @@
   }
 
   body {
-    @apply bg-cream text-dark font-instrument;
+    @apply bg-estetica-bg text-estetica-text font-onest;
   }
 
   h1,
@@ -19,47 +19,17 @@
   h4,
   h5,
   h6 {
-    @apply font-syne font-bold;
+    @apply font-onest font-bold;
   }
 
   ::selection {
-    background-color: #662e9b33;
+    background-color: #b7735933;
     color: #020100;
   }
 }
 
 @layer components {
-  .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-purple px-8 py-4 text-base font-semibold text-cream transition-all duration-300 hover:bg-purple-dark hover:shadow-lg hover:shadow-purple/20 active:scale-[0.98];
-  }
-
-  .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-dark bg-transparent px-8 py-4 text-base font-semibold text-dark transition-all duration-300 hover:bg-dark hover:text-cream active:scale-[0.98];
-  }
-
-  .btn-brown {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-brown px-8 py-4 text-base font-semibold text-cream transition-all duration-300 hover:bg-brown-dark hover:shadow-lg hover:shadow-brown/20 active:scale-[0.98];
-  }
-
-  .section-container {
-    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
-  }
-
-  .section-padding {
-    @apply py-16 sm:py-20 lg:py-28;
-  }
-
-  .card {
-    @apply rounded-3xl bg-white/60 p-6 shadow-sm backdrop-blur-sm transition-all duration-300 hover:shadow-md;
-  }
-
-  .card-dark {
-    @apply rounded-3xl bg-dark p-6 text-cream shadow-sm transition-all duration-300 hover:shadow-md;
-  }
-
-  .gradient-text {
-    @apply bg-gradient-to-r from-brown to-purple bg-clip-text text-transparent;
-  }
+  /* Minimal utility components for estetica style */
 }
 
 @layer utilities {
@@ -84,9 +54,4 @@ details[open] summary .faq-chevron {
 
 .faq-chevron {
   transition: transform 0.3s ease;
-}
-
-/* Smooth gradient backgrounds */
-.bg-grain {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
 }

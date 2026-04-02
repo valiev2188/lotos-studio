@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Студия Лотос — Архитектура продукта</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700&family=Instrument+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0E0F11;--bg2:#161719;--bg3:#1E2024;--bg4:#252830;
+  --border:#2C2F36;--border2:#363B44;
+  --text:#E8EAF0;--text2:#9199AA;--text3:#5A6070;
+  --teal:#22C5A0;--teal-bg:rgba(34,197,160,.1);--teal-border:rgba(34,197,160,.25);
+  --purple:#9B8EF5;--purple-bg:rgba(155,142,245,.1);--purple-border:rgba(155,142,245,.25);
+  --coral:#F07B5A;--coral-bg:rgba(240,123,90,.1);--coral-border:rgba(240,123,90,.25);
+  --blue:#5AA8F0;--blue-bg:rgba(90,168,240,.1);--blue-border:rgba(90,168,240,.25);
+  --amber:#F0BC5A;--amber-bg:rgba(240,188,90,.1);--amber-border:rgba(240,188,90,.25);
+  --green:#6DBF67;--green-bg:rgba(109,191,103,.1);--green-border:rgba(109,191,103,.25);
+  --red:#EF5959;
+  --radius:10px;--radius-lg:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:15px}
+a{color:var(--teal);text-decoration:none}
+
+/* LAYOUT */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:260px;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;z-index:50;padding:24px 0}
+.main{margin-left:260px;padding:48px 60px;max-width:1100px}
+.logo{padding:0 24px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.logo-name{font-family:'Syne',sans-serif;font-size:17px;font-weight:600;color:var(--text);letter-spacing:-.01em}
+.logo-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.nav-section{padding:8px 0}
+.nav-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:8px 24px 4px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 24px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s;border-left:2px solid transparent}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--teal);border-left-color:var(--teal);background:var(--teal-bg)}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5;flex-shrink:0}
+
+/* SECTIONS */
+.section{margin-bottom:72px}
+.section-anchor{scroll-margin-top:24px}
+.page-title{font-family:'Syne',sans-serif;font-size:42px;font-weight:700;line-height:1.1;letter-spacing:-.02em;margin-bottom:8px}
+.page-title span{color:var(--teal)}
+.page-sub{font-size:16px;color:var(--text2);margin-bottom:48px;max-width:600px}
+.section-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.section-title-num{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);padding:2px 8px;background:var(--bg3);border-radius:4px;border:1px solid var(--border)}
+.section-desc{font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.7}
+
+/* CARDS & GRIDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px}
+.card-sm{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+
+/* PRODUCT CARDS */
+.product-card{border-radius:var(--radius-lg);padding:28px;border:1px solid;transition:all .2s}
+.product-card.teal{background:var(--teal-bg);border-color:var(--teal-border)}
+.product-card.purple{background:var(--purple-bg);border-color:var(--purple-border)}
+.product-card.coral{background:var(--coral-bg);border-color:var(--coral-border)}
+.product-card h3{font-family:'Syne',sans-serif;font-size:20px;font-weight:600;margin-bottom:8px}
+.product-card.teal h3{color:var(--teal)}
+.product-card.purple h3{color:var(--purple)}
+.product-card.coral h3{color:var(--coral)}
+.product-card p{font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7}
+.product-card .tech{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);background:var(--bg3);padding:4px 10px;border-radius:4px;display:inline-block;margin:2px}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:4px;letter-spacing:.04em}
+.badge-teal{background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal-border)}
+.badge-purple{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+.badge-coral{background:var(--coral-bg);color:var(--coral);border:1px solid var(--coral-border)}
+.badge-blue{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.badge-amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.badge-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+
+/* FEATURE LIST */
+.feature-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.feature-item{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text2);line-height:1.5}
+.feature-dot{width:5px;height:5px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:6px}
+.feature-dot.purple{background:var(--purple)}
+.feature-dot.coral{background:var(--coral)}
+.feature-dot.blue{background:var(--blue)}
+
+/* TECH STACK */
+.tech-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.tech-row:last-child{border-bottom:none}
+.tech-name{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500;color:var(--text);min-width:140px}
+.tech-role{font-size:13px;color:var(--text2);flex:1}
+.tech-why{font-size:12px;color:var(--text3);text-align:right;max-width:200px}
+
+/* DB SCHEMA */
+.schema-table{width:100%;border-collapse:collapse;font-size:12px;font-family:'JetBrains Mono',monospace}
+.schema-table th{text-align:left;padding:8px 12px;background:var(--bg3);color:var(--text3);font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--border)}
+.schema-table td{padding:8px 12px;border:1px solid var(--border);color:var(--text2);vertical-align:top}
+.schema-table tr:nth-child(even) td{background:var(--bg3)}
+.col-name{color:var(--teal) !important;font-weight:500}
+.col-pk{color:var(--amber) !important}
+.col-fk{color:var(--purple) !important}
+.col-type{color:var(--blue) !important}
+
+/* API ENDPOINTS */
+.endpoint-group{margin-bottom:24px}
+.endpoint-group-title{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.endpoint{display:grid;grid-template-columns:70px 220px 1fr;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.endpoint:last-child{border-bottom:none}
+.method{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;text-align:center}
+.GET{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.POST{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.PUT{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.DELETE{background:var(--coral-bg);color:var(--red);border:1px solid var(--coral-border)}
+.PATCH{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+.endpoint-path{font-family:'JetBrains Mono',monospace;color:var(--text)}
+.endpoint-desc{color:var(--text2)}
+
+/* FLOW STEPS */
+.flow{display:flex;flex-direction:column;gap:0}
+.flow-step{display:flex;gap:16px;padding:16px 0}
+.flow-line{display:flex;flex-direction:column;align-items:center;gap:0}
+.flow-num{width:28px;height:28px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;color:var(--text2);flex-shrink:0}
+.flow-connector{width:1px;flex:1;min-height:16px;background:var(--border);margin:2px 0}
+.flow-content{flex:1;padding-bottom:8px}
+.flow-content h4{font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px}
+.flow-content p{font-size:13px;color:var(--text2);line-height:1.6}
+
+/* TIMELINE / ROADMAP */
+.phase{margin-bottom:20px}
+.phase-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.phase-label{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 12px;border-radius:4px;font-weight:500}
+.phase-1{background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal-border)}
+.phase-2{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)}
+.phase-3{background:var(--coral-bg);color:var(--coral);border:1px solid var(--coral-border)}
+.phase-title{font-weight:500;font-size:15px}
+.phase-tasks{display:flex;flex-wrap:wrap;gap:8px}
+.task{font-size:12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text2)}
+
+/* CODE BLOCK */
+pre{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);overflow-x:auto;line-height:1.7;margin:16px 0}
+pre .key{color:var(--teal)}
+pre .str{color:var(--amber)}
+pre .num{color:var(--purple)}
+pre .cmt{color:var(--text3)}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:48px 0}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* OVERVIEW HERO */
+.hero-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:32px 0}
+.metric-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center}
+.metric-n{font-family:'Syne',sans-serif;font-size:36px;font-weight:700;color:var(--text)}
+.metric-l{font-size:12px;color:var(--text3);margin-top:4px;letter-spacing:.04em}
+
+/* SCROLL HELPER */
+.scroll-fade{position:sticky;bottom:0;height:32px;background:linear-gradient(transparent,var(--bg2));pointer-events:none}
+
+@media(max-width:900px){
+  .sidebar{display:none}
+  .main{margin-left:0;padding:24px 20px}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+  .hero-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-name">Студия Лотос</div>
+    <div class="logo-sub">Архитектура продукта v1.0</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Обзор</div>
+    <div class="nav-item active" onclick="scrollTo('overview')"><div class="nav-dot"></div>Системный обзор</div>
+    <div class="nav-item" onclick="scrollTo('stack')"><div class="nav-dot"></div>Технологический стек</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Продукты</div>
+    <div class="nav-item" onclick="scrollTo('landing')"><div class="nav-dot teal" style="background:var(--teal)"></div>Landing Page</div>
+    <div class="nav-item" onclick="scrollTo('miniapp')"><div class="nav-dot" style="background:var(--purple)"></div>Telegram Mini App</div>
+    <div class="nav-item" onclick="scrollTo('admin')"><div class="nav-dot" style="background:var(--coral)"></div>Admin Panel</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Бэкенд</div>
+    <div class="nav-item" onclick="scrollTo('database')"><div class="nav-dot"></div>База данных</div>
+    <div class="nav-item" onclick="scrollTo('api')"><div class="nav-dot"></div>API эндпоинты</div>
+    <div class="nav-item" onclick="scrollTo('auth')"><div class="nav-dot"></div>Авторизация</div>
+    <div class="nav-item" onclick="scrollTo('notifications')"><div class="nav-dot"></div>Уведомления</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">UX Flows</div>
+    <div class="nav-item" onclick="scrollTo('flow-client')"><div class="nav-dot"></div>Клиентский путь</div>
+    <div class="nav-item" onclick="scrollTo('flow-admin')"><div class="nav-dot"></div>Админ путь</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Запуск</div>
+    <div class="nav-item" onclick="scrollTo('roadmap')"><div class="nav-dot"></div>Роадмап</div>
+    <div class="nav-item" onclick="scrollTo('deploy')"><div class="nav-dot"></div>Деплой</div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- OVERVIEW -->
+<div id="overview" class="section section-anchor">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+    <span class="badge badge-teal">PRODUCT SPEC</span>
+    <span style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">v1.0 · 2025</span>
+  </div>
+  <h1 class="page-title">Студия <span>Лотос</span><br>Архитектура</h1>
+  <p class="page-sub">Полная техническая спецификация трёх взаимосвязанных продуктов: Landing Page, Telegram Mini App и Admin Panel с единым бэкендом.</p>
+
+  <div class="hero-grid">
+    <div class="metric-card"><div class="metric-n">3</div><div class="metric-l">ПРОДУКТА</div></div>
+    <div class="metric-card"><div class="metric-n">6+</div><div class="metric-l">МОДУЛЕЙ БЭКЕНДА</div></div>
+    <div class="metric-card"><div class="metric-n">~40</div><div class="metric-l">REST ЭНДПОИНТОВ</div></div>
+  </div>
+
+  <div class="grid-3" style="margin-top:0">
+    <div class="product-card teal">
+      <h3>Landing Page</h3>
+      <p>Публичная витрина студии. SEO-оптимизированная страница для привлечения новых клиентов с кнопками записи через Telegram.</p>
+      <div><span class="tech">Next.js 14</span><span class="tech">TypeScript</span><span class="tech">Tailwind</span><span class="tech">Vercel</span></div>
+    </div>
+    <div class="product-card purple">
+      <h3>Telegram Mini App</h3>
+      <p>Основное приложение для клиентов. Регистрация через Telegram, запись на занятия, личный кабинет, история посещений.</p>
+      <div><span class="tech">React 18</span><span class="tech">Telegram SDK</span><span class="tech">Zustand</span><span class="tech">Framer</span></div>
+    </div>
+    <div class="product-card coral">
+      <h3>Admin Panel</h3>
+      <p>Внутренний инструмент для управления студией. Расписание, клиенты, аналитика, рассылки. Только для сотрудников.</p>
+      <div><span class="tech">React</span><span class="tech">TanStack</span><span class="tech">Recharts</span><span class="tech">Vite</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- TECH STACK -->
+<div id="stack" class="section section-anchor">
+  <div class="section-title"><span class="section-title-num">01</span>Технологический стек</div>
+  <p class="section-desc">Выбор технологий основан на скорости разработки, экосистеме для CIS-рынка и опыте команды.</p>
+
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:16px">Frontend</div>
+      <div class="tech-row"><span class="tech-name">Next.js 14</span><span class="tech-role">Landing Page, SSR/SSG, SEO</span></div>
+      <div class="tech-row"><span class="tech-name">React 18</span><span class="tech-role">Mini App, Admin Panel, SPA</span></div>
+      <div class="tech-row"><span class="tech-name">TypeScript</span><span class="tech-role">Типизация всего проекта</span></div>
+      <div class="tech-row"><span class="tech-name">Tailwind CSS</span><span class="tech-role">Утилитарный CSS, дизайн-система</span></div>
+      <div class="tech-row"><span class="tech-name">Zustand</span><span class="tech-role">State management Mini App</span></div>
+      <div class="tech-row"><span class="tech-name">TanStack Query</span><span class="tech-role">Кэш, серверное состояние</span></div>
+      <div class="tech-row"><span class="tech-name">Framer Motion</span><span class="tech-role">Анимации Mini App</span></div>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:16px">Backend</div>
+      <div class="tech-row"><span class="tech-name">Node.js 20 LTS</span><span class="tech-role">Runtime сервера</span></div>
+      <div class="tech-row"><span class="tech-name">Fastify</span><span class="tech-role">REST API фреймворк, быстрее Express</span></div>
+      <div class="tech-row"><span class="tech-name">Prisma ORM</span><span class="tech-role">Миграции, типизированный доступ к БД</span></div>
+      <div class="tech-row"><span class="tech-name">PostgreSQL</span><span class="tech-role">Основная база данных</span></div>
+      <div class="tech-row"><span class="tech-name">Supabase</span><span class="tech-role">Hosted PostgreSQL + Storage</span></div>
+      <div class="tech-row"><span class="tech-name">Redis (Upstash)</span><span class="tech-role">Кэш, сессии, очереди BullMQ</span></div>
+      <div class="tech-row"><span class="tech-name">Telegraf.js</span><span class="tech-role">Telegram Bot Worker</span></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:16px">Инфраструктура</div>
+      <div class="tech-row"><span class="tech-name">Vercel</span><span class="tech-role">Landing Page, Edge Functions</span></div>
+      <div class="tech-row"><span class="tech-name">Railway / Fly.io</span><span class="tech-role">Backend API + Bot Worker</span></div>
+      <div class="tech-row"><span class="tech-name">Cloudflare</span><span class="tech-role">CDN, DNS, DDoS-защита</span></div>
+      <div class="tech-row"><span class="tech-name">GitHub Actions</span><span class="tech-role">CI/CD, автодеплой при push</span></div>
+      <div class="tech-row"><span class="tech-name">Sentry</span><span class="tech-role">Мониторинг ошибок</span></div>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:16px">Внешние сервисы</div>
+      <div class="tech-row"><span class="tech-name">Eskiz SMS</span><span class="tech-role">SMS-уведомления (Узбекистан)</span></div>
+      <div class="tech-row"><span class="tech-name">Payme / Click</span><span class="tech-role">Оплата занятий онлайн</span></div>
+      <div class="tech-row"><span class="tech-name">Supabase Storage</span><span class="tech-role">Фото тренеров, материалы</span></div>
+      <div class="tech-row"><span class="tech-name">Telegram Payments</span><span class="tech-role">Оплата через Mini App</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- LANDING PAGE -->
+<div id="landing" class="section section-anchor">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+    <div class="section-title"><span class="section-title-num">02</span>Landing Page</div>
+    <span class="badge badge-teal">Next.js · Vercel</span>
+  </div>
+  <p class="section-desc">Публичная витрина студии. SEO-first, быстрая загрузка, конвертация в запись через Telegram Bot.</p>
+
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:16px">Структура страниц</div>
+      <ul class="feature-list">
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Hero секция</strong> — название, слоган, кнопка "Записаться"</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Направления</strong> — 6 карточек с описанием и ценой</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Расписание (превью)</strong> — ближайшие занятия на неделю</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Тренеры</strong> — фото, специализация, краткое bio</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Преимущества</strong> — 4 USP студии</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Отзывы</strong> — клиентские истории</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Цены / абонементы</strong> — тарифные планы</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>FAQ</strong> — accordion с вопросами</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Footer</strong> — карта, контакты, соцсети</div></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:16px">Технические требования</div>
+      <ul class="feature-list">
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Lighthouse 95+</strong> по всем метрикам</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>SSG / ISR</strong> — страницы рендерятся при билде</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Мета-теги</strong> — Open Graph, Twitter Card, Sitemap</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>i18n</strong> — русский / узбекский</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Telegram кнопки</strong> — все CTA открывают Mini App</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Analytics</strong> — Yandex.Metrica + GTM</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Форма контакта</strong> → отправляет сообщение в Telegram группу</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div><strong>Адаптив</strong> — mobile-first, 320px+</div></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:12px">Конвертация трафика → Mini App</div>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">1</div><div class="flow-connector"></div></div>
+        <div class="flow-content"><h4>Пользователь открывает Landing</h4><p>Органика, реклама Instagram/Telegram, рекомендации</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">2</div><div class="flow-connector"></div></div>
+        <div class="flow-content"><h4>Нажимает "Записаться"</h4><p>Все CTA кнопки — это <code>tg://resolve?domain=lotos_bot&startapp=book</code></p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">3</div></div>
+        <div class="flow-content"><h4>Telegram открывает Mini App</h4><p>Пользователь попадает в Mini App с deeplink параметром — сразу на нужный экран</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- TELEGRAM MINI APP -->
+<div id="miniapp" class="section section-anchor">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+    <div class="section-title"><span class="section-title-num">03</span>Telegram Mini App</div>
+    <span class="badge badge-purple">React · Telegram SDK</span>
+  </div>
+  <p class="section-desc">Основной продукт для клиентов. Запускается внутри Telegram. Авторизация автоматическая — через Telegram аккаунт.</p>
+
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <span class="badge badge-purple" style="font-size:10px">ЭКРАНЫ</span>
+      </div>
+      <ul class="feature-list">
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Онбординг (3 шага)</strong> — имя/телефон/цель</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Главная</strong> — баннер, ближайшее занятие, быстрые действия</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Расписание</strong> — фильтр по дням/направлениям, свободные места</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Запись на занятие</strong> — выбор даты → тренер → подтверждение</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Мои записи</strong> — предстоящие + история</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Тренеры</strong> — профиль, расписание тренера</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Упражнения</strong> — материалы от тренеров, фильтры</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Личный кабинет</strong> — профиль, абонемент, настройки</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Оплата</strong> — покупка занятий через Telegram Payments</div></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <span class="badge badge-purple" style="font-size:10px">ФУНКЦИИ</span>
+      </div>
+      <ul class="feature-list">
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Авторизация</strong> — автоматическая через Telegram.initDataUnsafe</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Отмена записи</strong> — за 2+ часа до занятия бесплатно</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Пуш-уведомления</strong> — напоминание за 1 час до занятия</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Отслеживание</strong> — счётчик занятий, серии, прогресс</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Абонементы</strong> — покупка и отслеживание баланса занятий</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Шеринг</strong> — пригласить друга через Telegram</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Offline stub</strong> — базовый экран если нет связи</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div><strong>Haptic feedback</strong> — вибрация на кнопках записи</div></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:16px">Флоу регистрации и первой записи</div>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">1</div><div class="flow-connector"></div></div>
+        <div class="flow-content"><h4>Первый запуск Mini App</h4><p>Telegram передаёт <code>initData</code> с telegram_id, first_name, username. Бэкенд проверяет подпись.</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">2</div><div class="flow-connector"></div></div>
+        <div class="flow-content"><h4>Новый пользователь → Онбординг</h4><p>3 экрана: имя (предзаполнено), телефон (+998 маска), цель (йога/пилатес/всё подряд). Создаётся аккаунт.</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">3</div><div class="flow-connector"></div></div>
+        <div class="flow-content"><h4>Главный экран</h4><p>Баннер "Первое занятие бесплатно" для новых. Ближайшее занятие по выбранному направлению.</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">4</div><div class="flow-connector"></div></div>
+        <div class="flow-content"><h4>Запись на занятие</h4><p>Выбор направления → дата → время → тренер (опционально) → подтверждение. Анимированный успех.</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-num">5</div></div>
+        <div class="flow-content"><h4>Уведомление в Telegram</h4><p>Бот отправляет сообщение с деталями записи + кнопку "Отменить". Напоминание за 1 час.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:12px">Архитектура Mini App (Frontend)</div>
+    <pre>
+<span class="cmt">// Структура папок</span>
+src/
+  app/                   <span class="cmt">// страницы (React Router)</span>
+    home/
+    schedule/
+    booking/
+    trainers/
+    exercises/
+    profile/
+  components/            <span class="cmt">// переиспользуемые UI компоненты</span>
+    ui/                  <span class="cmt">// Button, Card, Modal, Sheet</span>
+    schedule/            <span class="cmt">// ScheduleCard, TimeSlot</span>
+    booking/             <span class="cmt">// BookingForm, ConfirmSheet</span>
+  stores/                <span class="cmt">// Zustand stores</span>
+    useUserStore.ts      <span class="cmt">// профиль, авторизация</span>
+    useScheduleStore.ts  <span class="cmt">// расписание, фильтры</span>
+    useBookingStore.ts   <span class="cmt">// записи пользователя</span>
+  api/                   <span class="cmt">// TanStack Query hooks</span>
+    schedule.ts
+    bookings.ts
+    trainers.ts
+  utils/
+    telegram.ts          <span class="cmt">// Telegram SDK helpers</span>
+    auth.ts              <span class="cmt">// initData validator</span></pre>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ADMIN PANEL -->
+<div id="admin" class="section section-anchor">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+    <div class="section-title"><span class="section-title-num">04</span>Admin Panel</div>
+    <span class="badge badge-coral">React · TanStack · Recharts</span>
+  </div>
+  <p class="section-desc">Внутренний инструмент для администраторов и тренеров. Доступ по паролю, защищённый роутинг.</p>
+
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:16px">Модули панели</div>
+      <ul class="feature-list">
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Dashboard</strong> — сводная аналитика за сегодня/неделю/месяц</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Расписание</strong> — drag-and-drop создание и редактирование групп</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Клиенты</strong> — база, поиск, история, абонементы</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Тренеры</strong> — профили, расписание, нагрузка</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Записи</strong> — список всех записей, статусы, посещения</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Финансы</strong> — доходы, абонементы, возвраты</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Уведомления</strong> — рассылка сегментам клиентов</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Контент</strong> — упражнения, материалы для Mini App</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Настройки</strong> — студия, пользователи, роли</div></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:16px">Аналитика Dashboard</div>
+      <ul class="feature-list">
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>KPI метрики</strong> — записей сегодня, посещаемость, выручка</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Заполняемость</strong> — % свободных мест по занятиям</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>График посещений</strong> — по дням, по направлениям</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Популярные занятия</strong> — топ по записям</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Удержание</strong> — % повторных записей, отток</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Новые клиенты</strong> — по источникам (Landing/Direct/Referral)</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Тренерская нагрузка</strong> — занятий в неделю по тренерам</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div><strong>Финансовый отчёт</strong> — выручка, прогноз месяца</div></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:16px">Управление расписанием</div>
+    <div class="grid-2">
+      <ul class="feature-list">
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Создание занятия: направление, тренер, зал, вместимость, время</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Повторяющиеся занятия — еженедельно/каждые 2 недели</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Отмена занятия с автоматическим уведомлением записавшихся</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Замена тренера — пушится в Telegram всем записанным</div></li>
+      </ul>
+      <ul class="feature-list">
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Лист ожидания — автозапись при освобождении места</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Экспорт расписания в .xlsx / Google Calendar</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Drag & drop перенос занятий в недельном виде</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Шаблоны расписания — сохранить и применить на неделю</div></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:12px">Роли и доступы</div>
+    <div class="grid-3">
+      <div class="card-sm" style="border-color:var(--coral-border)">
+        <div style="font-size:12px;font-weight:600;color:var(--coral);margin-bottom:8px">SUPER ADMIN</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.7">Все разделы, финансы, настройки системы, управление пользователями</div>
+      </div>
+      <div class="card-sm" style="border-color:var(--amber-border)">
+        <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:8px">МЕНЕДЖЕР</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.7">Расписание, клиенты, записи, рассылки. Без финансов и настроек.</div>
+      </div>
+      <div class="card-sm" style="border-color:var(--teal-border)">
+        <div style="font-size:12px;font-weight:600;color:var(--teal);margin-bottom:8px">ТРЕНЕР</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.7">Только своё расписание, список записавшихся, загрузка материалов.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- DATABASE -->
+<div id="database" class="section section-anchor">
+  <div class="section-title"><span class="section-title-num">05</span>Схема базы данных</div>
+  <p class="section-desc">PostgreSQL через Supabase. Все таблицы с мягким удалением (deleted_at), аудит через created_at / updated_at.</p>
+
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">users</div>
+      <table class="schema-table">
+        <thead><tr><th>column</th><th>type</th><th>desc</th></tr></thead>
+        <tbody>
+          <tr><td class="col-pk">id</td><td class="col-type">uuid PK</td><td>Primary key</td></tr>
+          <tr><td class="col-name">telegram_id</td><td class="col-type">bigint unique</td><td>Telegram user ID</td></tr>
+          <tr><td class="col-name">first_name</td><td class="col-type">varchar(100)</td><td>Имя</td></tr>
+          <tr><td class="col-name">last_name</td><td class="col-type">varchar(100)</td><td>Фамилия</td></tr>
+          <tr><td class="col-name">phone</td><td class="col-type">varchar(20)</td><td>Телефон</td></tr>
+          <tr><td class="col-name">username</td><td class="col-type">varchar(100)</td><td>Telegram username</td></tr>
+          <tr><td class="col-name">role</td><td class="col-type">enum</td><td>client|trainer|manager|admin</td></tr>
+          <tr><td class="col-name">goal</td><td class="col-type">varchar(50)</td><td>yoga|pilates|stretch|any</td></tr>
+          <tr><td class="col-name">created_at</td><td class="col-type">timestamptz</td><td>Дата регистрации</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">classes (занятия)</div>
+      <table class="schema-table">
+        <thead><tr><th>column</th><th>type</th><th>desc</th></tr></thead>
+        <tbody>
+          <tr><td class="col-pk">id</td><td class="col-type">uuid PK</td><td>Primary key</td></tr>
+          <tr><td class="col-fk">trainer_id</td><td class="col-type">uuid FK</td><td>→ users.id</td></tr>
+          <tr><td class="col-fk">direction_id</td><td class="col-type">uuid FK</td><td>→ directions.id</td></tr>
+          <tr><td class="col-name">title</td><td class="col-type">varchar(200)</td><td>Название занятия</td></tr>
+          <tr><td class="col-name">starts_at</td><td class="col-type">timestamptz</td><td>Дата и время начала</td></tr>
+          <tr><td class="col-name">duration_min</td><td class="col-type">integer</td><td>Длительность мин</td></tr>
+          <tr><td class="col-name">max_spots</td><td class="col-type">integer</td><td>Макс. участников</td></tr>
+          <tr><td class="col-name">level</td><td class="col-type">enum</td><td>beginner|intermediate|all</td></tr>
+          <tr><td class="col-name">status</td><td class="col-type">enum</td><td>scheduled|cancelled|done</td></tr>
+          <tr><td class="col-name">recurrence</td><td class="col-type">jsonb</td><td>null | {freq, until}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">bookings (записи)</div>
+      <table class="schema-table">
+        <thead><tr><th>column</th><th>type</th><th>desc</th></tr></thead>
+        <tbody>
+          <tr><td class="col-pk">id</td><td class="col-type">uuid PK</td><td></td></tr>
+          <tr><td class="col-fk">user_id</td><td class="col-type">uuid FK</td><td>→ users.id</td></tr>
+          <tr><td class="col-fk">class_id</td><td class="col-type">uuid FK</td><td>→ classes.id</td></tr>
+          <tr><td class="col-name">status</td><td class="col-type">enum</td><td>pending|confirmed|attended|cancelled|no_show</td></tr>
+          <tr><td class="col-name">is_trial</td><td class="col-type">boolean</td><td>Пробное занятие</td></tr>
+          <tr><td class="col-fk">subscription_id</td><td class="col-type">uuid FK</td><td>→ subscriptions.id</td></tr>
+          <tr><td class="col-name">cancelled_at</td><td class="col-type">timestamptz</td><td>Время отмены</td></tr>
+          <tr><td class="col-name">created_at</td><td class="col-type">timestamptz</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">subscriptions (абонементы)</div>
+      <table class="schema-table">
+        <thead><tr><th>column</th><th>type</th><th>desc</th></tr></thead>
+        <tbody>
+          <tr><td class="col-pk">id</td><td class="col-type">uuid PK</td><td></td></tr>
+          <tr><td class="col-fk">user_id</td><td class="col-type">uuid FK</td><td>→ users.id</td></tr>
+          <tr><td class="col-fk">plan_id</td><td class="col-type">uuid FK</td><td>→ plans.id</td></tr>
+          <tr><td class="col-name">total_classes</td><td class="col-type">integer</td><td>Кол-во занятий в абонементе</td></tr>
+          <tr><td class="col-name">used_classes</td><td class="col-type">integer</td><td>Использовано</td></tr>
+          <tr><td class="col-name">expires_at</td><td class="col-type">timestamptz</td><td>Дата истечения</td></tr>
+          <tr><td class="col-name">paid_amount</td><td class="col-type">numeric(10,2)</td><td>Сумма в UZS</td></tr>
+          <tr><td class="col-name">payment_method</td><td class="col-type">varchar(50)</td><td>payme|click|cash|tg_pay</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Остальные таблицы</div>
+    <div class="grid-4">
+      <div class="card-sm"><div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px">directions</div><div style="font-size:12px;color:var(--text2)">id, name, description, color, icon</div></div>
+      <div class="card-sm"><div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px">trainers</div><div style="font-size:12px;color:var(--text2)">user_id FK, bio, experience, photo_url, certs</div></div>
+      <div class="card-sm"><div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px">exercises</div><div style="font-size:12px;color:var(--text2)">id, trainer_id FK, title, category, difficulty, content</div></div>
+      <div class="card-sm"><div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px">plans</div><div style="font-size:12px;color:var(--text2)">id, name, classes_count, price, validity_days</div></div>
+      <div class="card-sm"><div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px">waitlist</div><div style="font-size:12px;color:var(--text2)">id, user_id, class_id, position, notified_at</div></div>
+      <div class="card-sm"><div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px">notifications</div><div style="font-size:12px;color:var(--text2)">id, user_id, type, payload jsonb, sent_at</div></div>
+      <div class="card-sm"><div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px">reviews</div><div style="font-size:12px;color:var(--text2)">id, user_id, trainer_id, class_id, rating, text</div></div>
+      <div class="card-sm"><div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px">admin_users</div><div style="font-size:12px;color:var(--text2)">id, email, password_hash, role, last_login</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- API -->
+<div id="api" class="section section-anchor">
+  <div class="section-title"><span class="section-title-num">06</span>REST API Эндпоинты</div>
+  <p class="section-desc">Base URL: <code>https://api.lotos-studio.uz/v1</code>. Аутентификация: Bearer JWT токен в заголовке Authorization.</p>
+
+  <div class="card">
+    <div class="endpoint-group">
+      <div class="endpoint-group-title">Auth</div>
+      <div class="endpoint"><span class="method POST">POST</span><span class="endpoint-path">/auth/telegram</span><span class="endpoint-desc">Авторизация через Telegram initData. Возвращает JWT токен.</span></div>
+      <div class="endpoint"><span class="method POST">POST</span><span class="endpoint-path">/auth/admin/login</span><span class="endpoint-desc">Логин админ-панели через email/password.</span></div>
+      <div class="endpoint"><span class="method POST">POST</span><span class="endpoint-path">/auth/refresh</span><span class="endpoint-desc">Обновление access_token через refresh_token.</span></div>
+    </div>
+    <div class="endpoint-group">
+      <div class="endpoint-group-title">Users</div>
+      <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/users/me</span><span class="endpoint-desc">Профиль текущего пользователя.</span></div>
+      <div class="endpoint"><span class="method PUT">PUT</span><span class="endpoint-path">/users/me</span><span class="endpoint-desc">Обновление профиля (имя, телефон, цель).</span></div>
+      <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/users/me/stats</span><span class="endpoint-desc">Статистика: занятий всего, streak, любимые направления.</span></div>
+      <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/admin/users</span><span class="endpoint-desc">Список клиентов (admin). Поиск, фильтры, пагинация.</span></div>
+    </div>
+    <div class="endpoint-group">
+      <div class="endpoint-group-title">Schedule</div>
+      <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/schedule</span><span class="endpoint-desc">Расписание. Query: date_from, date_to, direction_id, trainer_id</span></div>
+      <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/classes/:id</span><span class="endpoint-desc">Детали занятия, список записанных (только для тренера/админа).</span></div>
+      <div class="endpoint"><span class="method POST">POST</span><span class="endpoint-path">/admin/classes</span><span class="endpoint-desc">Создать занятие (или повторяющуюся серию).</span></div>
+      <div class="endpoint"><span class="method PUT">PUT</span><span class="endpoint-path">/admin/classes/:id</span><span class="endpoint-desc">Редактировать занятие. Триггерит уведомления.</span></div>
+      <div class="endpoint"><span class="method DELETE">DELETE</span><span class="endpoint-path">/admin/classes/:id</span><span class="endpoint-desc">Отмена занятия. Уведомляет всех записанных.</span></div>
+    </div>
+    <div class="endpoint-group">
+      <div class="endpoint-group-title">Bookings</div>
+      <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/bookings</span><span class="endpoint-desc">Записи текущего пользователя. Query: status, limit.</span></div>
+      <div class="endpoint"><span class="method POST">POST</span><span class="endpoint-path">/bookings</span><span class="endpoint-desc">Создать запись. Body: class_id, is_trial, subscription_id.</span></div>
+      <div class="endpoint"><span class="method PATCH">PATCH</span><span class="endpoint-path">/bookings/:id/cancel</span><span class="endpoint-desc">Отмена записи. Возврат занятия на абонемент если &gt;2 часа.</span></div>
+      <div class="endpoint"><span class="method PATCH">PATCH</span><span class="endpoint-path">/admin/bookings/:id/attend</span><span class="endpoint-desc">Отметить посещение (тренер/менеджер).</span></div>
+    </div>
+    <div class="endpoint-group">
+      <div class="endpoint-group-title">Analytics (admin only)</div>
+      <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/admin/analytics/overview</span><span class="endpoint-desc">KPI за период: записи, посещения, выручка, новые клиенты.</span></div>
+      <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/admin/analytics/attendance</span><span class="endpoint-desc">График посещаемости по дням/направлениям/тренерам.</span></div>
+      <div class="endpoint"><span class="method GET">GET</span><span class="endpoint-path">/admin/analytics/revenue</span><span class="endpoint-desc">Финансовый отчёт: продажи абонементов, прогноз.</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- AUTH -->
+<div id="auth" class="section section-anchor">
+  <div class="section-title"><span class="section-title-num">07</span>Авторизация</div>
+  <p class="section-desc">Две системы: Telegram для клиентов (Mini App), Email/Password для администраторов (Admin Panel).</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--purple);margin-bottom:16px">Telegram Auth (клиенты)</div>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-line"><div class="flow-num">1</div><div class="flow-connector"></div></div>
+          <div class="flow-content"><h4>Mini App стартует</h4><p>Telegram передаёт <code>window.Telegram.WebApp.initData</code> — строка с hash подписью.</p></div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-line"><div class="flow-num">2</div><div class="flow-connector"></div></div>
+          <div class="flow-content"><h4>Фронт → POST /auth/telegram</h4><p>Отправляет initData. Бэкенд верифицирует HMAC-SHA256 подпись с Bot Token.</p></div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-line"><div class="flow-num">3</div><div class="flow-connector"></div></div>
+          <div class="flow-content"><h4>Бэкенд возвращает JWT</h4><p>access_token (15 мин) + refresh_token (30 дней). Клиент хранит в memory + localStorage.</p></div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-line"><div class="flow-num">4</div></div>
+          <div class="flow-content"><h4>Все запросы с Bearer токеном</h4><p>Middleware на каждом маршруте проверяет токен. При 401 — автоматический refresh.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--coral);margin-bottom:16px">Email Auth (администраторы)</div>
+      <ul class="feature-list" style="margin-bottom:20px">
+        <li class="feature-item"><div class="feature-dot coral"></div><div>bcrypt хэш паролей (cost factor 12)</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>JWT + httpOnly cookie (XSS защита)</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Rate limiting — 5 попыток в минуту</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>2FA опционально — TOTP через Authenticator</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Audit log — каждое действие в admin_audit таблицу</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Session timeout — 8 часов без активности</div></li>
+      </ul>
+      <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px">RBAC матрица</div>
+      <pre style="font-size:11px;margin:0">
+Role          | Schedule | Clients | Finance | Settings
+--------------|----------|---------|---------|----------
+super_admin   | RW       | RW      | RW      | RW
+manager       | RW       | RW      | R       | -
+trainer       | R (own)  | R (own) | -       | -</pre>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- NOTIFICATIONS -->
+<div id="notifications" class="section section-anchor">
+  <div class="section-title"><span class="section-title-num">08</span>Система уведомлений</div>
+  <p class="section-desc">Telegram-первичный. SMS — резерв. BullMQ очереди для отложенных задач.</p>
+
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:16px">Триггеры уведомлений</div>
+      <ul class="feature-list">
+        <li class="feature-item"><div class="feature-dot blue"></div><div><strong>Запись создана</strong> — мгновенно, детали занятия + кнопка отмены</div></li>
+        <li class="feature-item"><div class="feature-dot blue"></div><div><strong>Напоминание</strong> — за 24 часа и за 1 час до занятия</div></li>
+        <li class="feature-item"><div class="feature-dot blue"></div><div><strong>Занятие отменено</strong> — мгновенно, причина + альтернативы</div></li>
+        <li class="feature-item"><div class="feature-dot blue"></div><div><strong>Место освободилось</strong> — из листа ожидания</div></li>
+        <li class="feature-item"><div class="feature-dot blue"></div><div><strong>Абонемент истекает</strong> — за 3 дня и в день истечения</div></li>
+        <li class="feature-item"><div class="feature-dot blue"></div><div><strong>Рассылка от админа</strong> — по сегментам клиентов</div></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:16px">Архитектура очередей</div>
+      <pre style="font-size:11px;margin:0">
+<span class="cmt">// BullMQ queues</span>
+notifications:immediate  <span class="cmt">// instant send</span>
+notifications:scheduled  <span class="cmt">// delayed jobs (reminders)</span>
+notifications:bulk       <span class="cmt">// mass sends, rate limited</span>
+
+<span class="cmt">// Job payload</span>
+{
+  <span class="key">type</span>: <span class="str">"booking_confirmed"</span>,
+  <span class="key">user_id</span>: <span class="str">"uuid"</span>,
+  <span class="key">channel</span>: <span class="str">"telegram"</span>,  <span class="cmt">// | "sms"</span>
+  <span class="key">data</span>: { class_id, trainer_name, time }
+}</pre>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- CLIENT FLOW -->
+<div id="flow-client" class="section section-anchor">
+  <div class="section-title"><span class="section-title-num">09</span>UX Flow — Клиентский путь</div>
+  <p class="section-desc">Полный путь нового клиента от первого касания до постоянного посещения.</p>
+  <div class="card">
+    <div class="grid-2">
+      <div>
+        <div style="font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:12px">Первое касание</div>
+        <div class="flow">
+          <div class="flow-step"><div class="flow-line"><div class="flow-num">1</div><div class="flow-connector"></div></div><div class="flow-content"><h4>Landing Page</h4><p>Видит студию, читает про направления, жмёт "Первое занятие бесплатно"</p></div></div>
+          <div class="flow-step"><div class="flow-line"><div class="flow-num">2</div><div class="flow-connector"></div></div><div class="flow-content"><h4>Telegram открывается</h4><p>Mini App запускается прямо в Telegram — привычная среда, не надо ничего скачивать</p></div></div>
+          <div class="flow-step"><div class="flow-line"><div class="flow-num">3</div><div class="flow-connector"></div></div><div class="flow-content"><h4>Онбординг 3 шага</h4><p>Имя → телефон → что хочешь (цель). Максимально коротко.</p></div></div>
+          <div class="flow-step"><div class="flow-line"><div class="flow-num">4</div></div><div class="flow-content"><h4>Записывается на пробное</h4><p>Выбирает удобное время, получает подтверждение в Telegram от бота</p></div></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:12px">Постоянный клиент</div>
+        <div class="flow">
+          <div class="flow-step"><div class="flow-line"><div class="flow-num">5</div><div class="flow-connector"></div></div><div class="flow-content"><h4>После пробного</h4><p>Бот пишет: "Как занятие? Купить абонемент?" — inline кнопки с тарифами</p></div></div>
+          <div class="flow-step"><div class="flow-line"><div class="flow-num">6</div><div class="flow-connector"></div></div><div class="flow-content"><h4>Покупает абонемент</h4><p>Payme / Click / Telegram Pay. Баланс занятий отображается в профиле.</p></div></div>
+          <div class="flow-step"><div class="flow-line"><div class="flow-num">7</div><div class="flow-connector"></div></div><div class="flow-content"><h4>Еженедельный цикл</h4><p>Пн утром бот присылает расписание недели → быстрая запись в 1 тап</p></div></div>
+          <div class="flow-step"><div class="flow-line"><div class="flow-num">8</div></div><div class="flow-content"><h4>Геймификация</h4><p>Streak занятий, значки, "10-е занятие — подарок" — удержание</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ADMIN FLOW -->
+<div id="flow-admin" class="section section-anchor">
+  <div class="section-title"><span class="section-title-num">10</span>UX Flow — Администратор</div>
+  <p class="section-desc">Ежедневная работа менеджера студии в Admin Panel.</p>
+  <div class="card">
+    <div class="flow">
+      <div class="flow-step"><div class="flow-line"><div class="flow-num">Утро</div><div class="flow-connector"></div></div><div class="flow-content"><h4>Открывает Dashboard</h4><p>Видит: сколько записей сегодня, кто пришёл вчера (посещаемость), остатки мест в ближайших занятиях</p></div></div>
+      <div class="flow-step"><div class="flow-line"><div class="flow-num">~</div><div class="flow-connector"></div></div><div class="flow-content"><h4>Управляет расписанием</h4><p>Создаёт занятия на следующую неделю через drag & drop редактор или копирует шаблон</p></div></div>
+      <div class="flow-step"><div class="flow-line"><div class="flow-num">~</div><div class="flow-connector"></div></div><div class="flow-content"><h4>Работа с клиентами</h4><p>Отвечает на отмены, вручную записывает клиентов позвонивших по телефону, обновляет абонементы</p></div></div>
+      <div class="flow-step"><div class="flow-line"><div class="flow-num">Нед</div></div><div class="flow-content"><h4>Аналитика и рассылки</h4><p>Смотрит аналитику недели, отправляет рассылку клиентам которые давно не были — реактивация</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ROADMAP -->
+<div id="roadmap" class="section section-anchor">
+  <div class="section-title"><span class="section-title-num">11</span>Роадмап разработки</div>
+  <p class="section-desc">MVP за 6-8 недель. Монорепозиторий: /landing, /miniapp, /admin, /backend — единый package.json.</p>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-label phase-1">ФАЗА 1 · НЕДЕЛИ 1–2</span>
+        <span class="phase-title">Основа бэкенда + БД</span>
+      </div>
+      <div class="phase-tasks">
+        <span class="task">Prisma схема + миграции</span><span class="task">Auth модуль (Telegram)</span><span class="task">REST API скелет (Fastify)</span><span class="task">Базовый CRUD: users, classes, bookings</span><span class="task">Supabase настройка</span><span class="task">GitHub Actions CI</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-label phase-1">ФАЗА 2 · НЕДЕЛИ 3–4</span>
+        <span class="phase-title">Telegram Mini App MVP</span>
+      </div>
+      <div class="phase-tasks">
+        <span class="task">Онбординг (3 экрана)</span><span class="task">Главная страница</span><span class="task">Расписание с фильтрами</span><span class="task">Флоу записи на занятие</span><span class="task">Мои записи + отмена</span><span class="task">Бот-уведомления (подтверждение)</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-label phase-2">ФАЗА 3 · НЕДЕЛИ 5–6</span>
+        <span class="phase-title">Admin Panel + Landing</span>
+      </div>
+      <div class="phase-tasks">
+        <span class="task">Admin авторизация</span><span class="task">Dashboard аналитика</span><span class="task">Управление расписанием</span><span class="task">Список клиентов</span><span class="task">Landing Page (Next.js)</span><span class="task">SEO + мета-теги</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-label phase-3">ФАЗА 4 · НЕДЕЛИ 7–8</span>
+        <span class="phase-title">Оплата + Полировка</span>
+      </div>
+      <div class="phase-tasks">
+        <span class="task">Payme интеграция</span><span class="task">Абонементы в Mini App</span><span class="task">Напоминания (BullMQ)</span><span class="task">Лист ожидания</span><span class="task">Страница тренеров в Admin</span><span class="task">Тестирование</span><span class="task">Деплой production</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-label phase-3">ФАЗА 5 · ПОСЛЕ ЗАПУСКА</span>
+        <span class="phase-title">Рост и масштабирование</span>
+      </div>
+      <div class="phase-tasks">
+        <span class="task">Геймификация (streak, бейджи)</span><span class="task">Рассылки + сегменты</span><span class="task">Мобильное приложение (Expo)</span><span class="task">Онлайн-занятия (stream)</span><span class="task">Мультистудия</span><span class="task">BI-аналитика</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- DEPLOY -->
+<div id="deploy" class="section section-anchor">
+  <div class="section-title"><span class="section-title-num">12</span>Деплой и инфраструктура</div>
+  <p class="section-desc">Serverless-first. Минимум DevOps. Автодеплой при push в main.</p>
+
+  <div class="grid-3" style="margin-bottom:16px">
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;color:var(--teal);margin-bottom:12px">Landing Page</div>
+      <ul class="feature-list">
+        <li class="feature-item"><div class="feature-dot"></div><div>Vercel — авто-деплой</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div>Edge Network (CDN)</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div>Preview per PR</div></li>
+        <li class="feature-item"><div class="feature-dot"></div><div>lotos-studio.uz</div></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:12px">Telegram Mini App</div>
+      <ul class="feature-list">
+        <li class="feature-item"><div class="feature-dot purple"></div><div>Vercel или Cloudflare Pages</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div>app.lotos-studio.uz</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div>Telegram BotFather WebApp URL</div></li>
+        <li class="feature-item"><div class="feature-dot purple"></div><div>HTTPS обязателен</div></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;color:var(--coral);margin-bottom:12px">Backend API + Admin</div>
+      <ul class="feature-list">
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Railway.app — Node.js сервис</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Supabase — PostgreSQL</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>Upstash — Redis</div></li>
+        <li class="feature-item"><div class="feature-dot coral"></div><div>api.lotos-studio.uz</div></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:12px">Структура монорепозитория</div>
+    <pre>
+lotos-studio/
+  apps/
+    landing/         <span class="cmt">// Next.js 14</span>
+    miniapp/         <span class="cmt">// React + Telegram SDK</span>
+    admin/           <span class="cmt">// React + TanStack</span>
+    api/             <span class="cmt">// Node.js + Fastify</span>
+    bot/             <span class="cmt">// Telegraf.js Bot Worker</span>
+  packages/
+    ui/              <span class="cmt">// Shared components (shadcn-based)</span>
+    types/           <span class="cmt">// Shared TypeScript types</span>
+    config/          <span class="cmt">// ESLint, Tailwind, tsconfig</span>
+  prisma/
+    schema.prisma    <span class="cmt">// Единая схема</span>
+    migrations/
+  .github/
+    workflows/
+      deploy.yml     <span class="cmt">// CI/CD pipeline</span>
+  pnpm-workspace.yaml
+  turbo.json        <span class="cmt">// Turborepo — параллельные билды</span></pre>
+  </div>
+
+  <div style="margin-top:32px;padding:20px;background:var(--teal-bg);border:1px solid var(--teal-border);border-radius:var(--radius);font-size:13px;color:var(--text2);line-height:1.8">
+    <div style="font-size:12px;font-weight:600;color:var(--teal);margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase">Следующий шаг</div>
+    Готов приступить к разработке любого из модулей. Рекомендуемый старт: <strong style="color:var(--text)">бэкенд (Phase 1)</strong> — создать Prisma схему, настроить Supabase и базовый API. После этого — Mini App и Admin Panel параллельно.
+  </div>
+</div>
+
+</main>
+
+<script>
+function scrollTo(id){
+  const el = document.getElementById(id);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+window.addEventListener('scroll',()=>{
+  const sections=['overview','stack','landing','miniapp','admin','database','api','auth','notifications','flow-client','flow-admin','roadmap','deploy'];
+  let current='overview';
+  sections.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&window.scrollY>=el.offsetTop-100) current=id;
+  });
+  document.querySelectorAll('.nav-item').forEach((n,i)=>{
+    const id=sections[i-2];
+    if(id) n.classList.toggle('active',id===current);
+  });
+});
+</script>
+</body>
+</html>
