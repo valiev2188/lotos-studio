@@ -5,11 +5,11 @@
 @layer base {
   html, body, #root {
     height: 100%;
-    background-color: #FFECCC;
   }
   body {
     font-family: 'Instrument Sans', sans-serif;
-    color: #020100;
+    background-color: #FAF5EF;
+    color: #1C1810;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
   }
