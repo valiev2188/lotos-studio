@@ -1,5 +1,5 @@
 {
-  "extends": "@lotos/config/tsconfig/node.json",
+  "extends": "@lotos/config/tsconfig/node",
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist"
