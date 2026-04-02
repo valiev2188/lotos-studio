@@ -1,0 +1,19 @@
+{
+  "name": "@lotos/config",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./tsconfig/*": "./tsconfig/*.json",
+    "./eslint/*": "./eslint/*.js",
+    "./tailwind": "./tailwind/base.ts",
+    "./prettier": "./prettier.config.js"
+  },
+  "devDependencies": {
+    "eslint": "^9.17.0",
+    "@eslint/js": "^9.17.0",
+    "typescript-eslint": "^8.18.0",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "tailwindcss": "^3.4.0"
+  }
+}
