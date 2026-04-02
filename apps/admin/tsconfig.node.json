@@ -1,10 +1,13 @@
 {
-  "extends": "@lotos/config/tsconfig/node.json",
   "compilerOptions": {
-    "composite": true,
+    "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "composite": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": false
   },
   "include": ["vite.config.ts", "tailwind.config.ts", "postcss.config.js"]
 }
