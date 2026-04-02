@@ -20,13 +20,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 async function main() {
   const fastify = Fastify({
-    logger: {
-      level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-      transport:
-        process.env.NODE_ENV !== 'production'
-          ? { target: 'pino-pretty', options: { colorize: true } }
-          : undefined,
-    },
+    logger: { level: process.env.NODE_ENV === 'production' ? 'info' : 'warn' },
   });
 
   // Plugins
