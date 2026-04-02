@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+    background-color: #FFECCC;
+  }
+  body {
+    font-family: 'Instrument Sans', sans-serif;
+    color: #020100;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .h-screen-safe {
+    height: calc(100vh - env(safe-area-inset-bottom));
+  }
+}
