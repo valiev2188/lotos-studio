@@ -1,0 +1,341 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ──────────────────────────────────────────────
+
+enum UserRole {
+  client
+  trainer
+  manager
+  admin
+}
+
+enum UserGoal {
+  yoga
+  pilates
+  stretch
+  any
+}
+
+enum Language {
+  ru
+  uz
+}
+
+enum ClassLevel {
+  beginner
+  intermediate
+  all
+}
+
+enum ClassStatus {
+  scheduled
+  cancelled
+  done
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  attended
+  cancelled
+  no_show
+}
+
+enum SubscriptionStatus {
+  active
+  expired
+  cancelled
+}
+
+enum PaymentMethod {
+  payme
+  click
+  cash
+  tg_pay
+}
+
+enum AdminRole {
+  super_admin
+  manager
+  trainer
+}
+
+enum NotificationType {
+  booking_confirmed
+  reminder_24h
+  reminder_1h
+  class_cancelled
+  waitlist_spot
+  subscription_expiring
+  admin_broadcast
+}
+
+enum NotificationChannel {
+  telegram
+  sms
+}
+
+enum ExerciseDifficulty {
+  easy
+  medium
+  hard
+}
+
+// ── Models ─────────────────────────────────────────────
+
+model User {
+  id         String    @id @default(uuid())
+  telegramId BigInt    @unique @map("telegram_id")
+  firstName  String    @map("first_name") @db.VarChar(100)
+  lastName   String?   @map("last_name") @db.VarChar(100)
+  phone      String?   @db.VarChar(20)
+  username   String?   @db.VarChar(100)
+  role       UserRole  @default(client)
+  goal       UserGoal?
+  language   Language  @default(ru)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  trainer       Trainer?
+  bookings      Booking[]
+  subscriptions Subscription[]
+  waitlist      Waitlist[]
+  notifications Notification[]
+  reviews       Review[]
+
+  @@map("users")
+}
+
+model Direction {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  color       String?  @db.VarChar(7)
+  icon        String?  @db.VarChar(50)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  classes Class[]
+
+  @@map("directions")
+}
+
+model Trainer {
+  id              String   @id @default(uuid())
+  userId          String   @unique @map("user_id")
+  bio             String?  @db.Text
+  experienceYears Int      @default(0) @map("experience_years")
+  photoUrl        String?  @map("photo_url")
+  certifications  String[] @default([])
+  specializations String[] @default([])
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classes   Class[]
+  exercises Exercise[]
+
+  @@map("trainers")
+}
+
+model Class {
+  id          String      @id @default(uuid())
+  trainerId   String      @map("trainer_id")
+  directionId String      @map("direction_id")
+  title       String      @db.VarChar(200)
+  description String?     @db.Text
+  startsAt    DateTime    @map("starts_at")
+  durationMin Int         @map("duration_min")
+  maxSpots    Int         @map("max_spots")
+  level       ClassLevel  @default(all)
+  status      ClassStatus @default(scheduled)
+  recurrence  Json?
+  room        String?     @db.VarChar(50)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  deletedAt   DateTime?   @map("deleted_at")
+
+  trainer   Trainer    @relation(fields: [trainerId], references: [id])
+  direction Direction  @relation(fields: [directionId], references: [id])
+  bookings  Booking[]
+  waitlist  Waitlist[]
+  reviews   Review[]
+
+  @@index([startsAt])
+  @@index([status])
+  @@map("classes")
+}
+
+model Plan {
+  id           String   @id @default(uuid())
+  name         String   @db.VarChar(100)
+  description  String?  @db.Text
+  classesCount Int      @map("classes_count")
+  price        Decimal  @db.Decimal(12, 2)
+  validityDays Int      @map("validity_days")
+  isActive     Boolean  @default(true) @map("is_active")
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id            String             @id @default(uuid())
+  userId        String             @map("user_id")
+  planId        String             @map("plan_id")
+  totalClasses  Int                @map("total_classes")
+  usedClasses   Int                @default(0) @map("used_classes")
+  startsAt      DateTime           @map("starts_at")
+  expiresAt     DateTime           @map("expires_at")
+  paidAmount    Decimal            @map("paid_amount") @db.Decimal(12, 2)
+  paymentMethod PaymentMethod      @map("payment_method")
+  paymentId     String?            @map("payment_id")
+  status        SubscriptionStatus @default(active)
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan     Plan      @relation(fields: [planId], references: [id])
+  bookings Booking[]
+
+  @@index([userId, expiresAt])
+  @@map("subscriptions")
+}
+
+model Booking {
+  id             String        @id @default(uuid())
+  userId         String        @map("user_id")
+  classId        String        @map("class_id")
+  subscriptionId String?       @map("subscription_id")
+  status         BookingStatus @default(confirmed)
+  isTrial        Boolean       @default(false) @map("is_trial")
+  cancelledAt    DateTime?     @map("cancelled_at")
+  cancelReason   String?       @map("cancel_reason") @db.VarChar(255)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class        Class         @relation(fields: [classId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@unique([userId, classId])
+  @@index([userId, status])
+  @@map("bookings")
+}
+
+model Waitlist {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  classId    String    @map("class_id")
+  position   Int
+  notifiedAt DateTime? @map("notified_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class Class @relation(fields: [classId], references: [id])
+
+  @@unique([userId, classId])
+  @@map("waitlist")
+}
+
+model Exercise {
+  id          String             @id @default(uuid())
+  trainerId   String             @map("trainer_id")
+  title       String             @db.VarChar(200)
+  description String?            @db.Text
+  category    String             @db.VarChar(50)
+  difficulty  ExerciseDifficulty @default(medium)
+  content     String             @db.Text
+  mediaUrl    String?            @map("media_url")
+  isPublished Boolean            @default(false) @map("is_published")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  trainer Trainer @relation(fields: [trainerId], references: [id])
+
+  @@map("exercises")
+}
+
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String              @map("user_id")
+  type      NotificationType
+  channel   NotificationChannel @default(telegram)
+  payload   Json                @default("{}")
+  sentAt    DateTime?           @map("sent_at")
+  readAt    DateTime?           @map("read_at")
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  trainerId   String?  @map("trainer_id")
+  classId     String?  @map("class_id")
+  rating      Int      @db.SmallInt
+  text        String?  @db.Text
+  isPublished Boolean  @default(true) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class Class? @relation(fields: [classId], references: [id])
+
+  @@map("reviews")
+}
+
+model AdminUser {
+  id           String    @id @default(uuid())
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash")
+  role         AdminRole @default(manager)
+  firstName    String    @map("first_name") @db.VarChar(100)
+  lastName     String?   @map("last_name") @db.VarChar(100)
+  isActive     Boolean   @default(true) @map("is_active")
+  totpSecret   String?   @map("totp_secret")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  auditLogs AdminAuditLog[]
+
+  @@map("admin_users")
+}
+
+model AdminAuditLog {
+  id          String   @id @default(uuid())
+  adminUserId String   @map("admin_user_id")
+  action      String   @db.VarChar(100)
+  entityType  String   @map("entity_type") @db.VarChar(50)
+  entityId    String?  @map("entity_id")
+  changes     Json?
+  ipAddress   String?  @map("ip_address") @db.VarChar(45)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  adminUser AdminUser @relation(fields: [adminUserId], references: [id])
+
+  @@index([adminUserId])
+  @@index([createdAt])
+  @@map("admin_audit_log")
+}
