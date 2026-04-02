@@ -11,7 +11,12 @@
     "JWT_SECRET",
     "JWT_REFRESH_SECRET",
     "ADMIN_JWT_SECRET",
-    "NODE_ENV"
+    "NODE_ENV",
+    "PORT",
+    "CORS_ORIGIN",
+    "MINIAPP_URL",
+    "ADMIN_URL",
+    "LANDING_URL"
   ],
   "tasks": {
     "build": {
