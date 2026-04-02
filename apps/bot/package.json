@@ -1,0 +1,25 @@
+{
+  "name": "@lotos/bot",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup src/index.ts --format esm",
+    "start": "node dist/index.js",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "telegraf": "^4.16.0",
+    "@prisma/client": "^5.22.0",
+    "ioredis": "^5.4.0",
+    "bullmq": "^5.25.0",
+    "@lotos/types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "tsx": "^4.19.0",
+    "tsup": "^8.3.0",
+    "@lotos/config": "workspace:*"
+  }
+}
