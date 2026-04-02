@@ -3,7 +3,7 @@ import { setTokens, clearTokens, apiFetch } from '../api/client';
 import { getInitData } from '../utils/telegram';
 
 interface UserState {
-  user: Record<string, unknown> | null;
+  user: Record<string, any> | null;
   isNewUser: boolean;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -24,7 +24,7 @@ export const useUserStore = create<UserState>((set) => ({
       const data = await apiFetch<{
         accessToken: string;
         refreshToken: string;
-        user: Record<string, unknown>;
+        user: Record<string, any>;
         isNewUser: boolean;
       }>('/auth/telegram', {
         method: 'POST',
