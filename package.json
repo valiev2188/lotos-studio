@@ -19,10 +19,11 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
   },
   "devDependencies": {
-    "turbo": "^2.4.0",
-    "prettier": "^3.4.0",
     "@types/node": "^20.17.0",
-    "prisma": "^5.22.0"
+    "prettier": "^3.4.0",
+    "prisma": "^5.22.0",
+    "tsx": "^4.19.0",
+    "turbo": "^2.4.0"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0"

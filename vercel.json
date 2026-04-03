@@ -1,0 +1,6 @@
+{
+  "buildCommand": "npx turbo run build --filter=@lotos/landing",
+  "outputDirectory": "apps/landing/.next",
+  "installCommand": "pnpm install",
+  "framework": "nextjs"
+}
