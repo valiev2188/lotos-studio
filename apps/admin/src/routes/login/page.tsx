@@ -16,11 +16,14 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await apiFetch<{ admin: { id: string; email: string; firstName: string; role: string } }>(
+      const res = await apiFetch<{
+        accessToken: string;
+        user: { id: string; email: string; firstName: string; lastName?: string; role: string };
+      }>(
         '/auth/admin/login',
         { method: 'POST', body: JSON.stringify({ email, password }) },
       );
-      setAdmin(res.admin);
+      setAdmin(res.user, res.accessToken);
       navigate('/');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Ошибка входа');
