@@ -10,8 +10,9 @@ interface AdminUser {
 
 interface AuthState {
   admin: AdminUser | null;
+  token: string | null;
   isAuthenticated: boolean;
-  setAdmin: (admin: AdminUser) => void;
+  setAdmin: (admin: AdminUser, token: string) => void;
   logout: () => void;
 }
 
@@ -19,12 +20,10 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       admin: null,
+      token: null,
       isAuthenticated: false,
-      setAdmin: (admin) => set({ admin, isAuthenticated: true }),
-      logout: () => {
-        fetch('/api/auth/admin/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
-        set({ admin: null, isAuthenticated: false });
-      },
+      setAdmin: (admin, token) => set({ admin, token, isAuthenticated: true }),
+      logout: () => set({ admin: null, token: null, isAuthenticated: false }),
     }),
     { name: 'lotos-admin-auth' },
   ),
