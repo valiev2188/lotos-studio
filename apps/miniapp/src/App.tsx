@@ -33,7 +33,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: '#FAF5EF' }}>
       <div className="flex-1 overflow-y-auto pb-20">
         <Routes>
           <Route path="/" element={<HomePage />} />
