@@ -1,4 +1,5 @@
-const BASE = '/api';
+const RAILWAY_API = import.meta.env.VITE_API_URL || '';
+const BASE = RAILWAY_API ? `${RAILWAY_API}/v1` : '/api';
 
 export async function apiFetch<T = unknown>(
   path: string,
