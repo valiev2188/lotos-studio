@@ -25,11 +25,23 @@ async function main() {
 
   // Plugins
   await fastify.register(cors, {
-    origin: [
-      process.env.MINIAPP_URL || 'http://localhost:5173',
-      process.env.ADMIN_URL || 'http://localhost:5174',
-      process.env.LANDING_URL || 'http://localhost:3000',
-    ],
+    origin: (origin, cb) => {
+      const allowed = [
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'http://localhost:3000',
+        process.env.MINIAPP_URL,
+        process.env.ADMIN_URL,
+        process.env.LANDING_URL,
+      ].filter(Boolean);
+
+      // Allow all Vercel preview/production domains
+      if (!origin || allowed.includes(origin) || /\.vercel\.app$/.test(origin)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Not allowed by CORS'), false);
+      }
+    },
     credentials: true,
   });
 
