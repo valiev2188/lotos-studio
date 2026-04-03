@@ -19,10 +19,10 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAF5EF' }}>
         <div className="text-center">
           <div className="text-5xl mb-4">🪷</div>
-          <div className="text-dark/50 text-sm font-instrument">Загрузка...</div>
+          <div className="text-sm font-instrument" style={{ color: '#B8A898' }}>Загрузка...</div>
         </div>
       </div>
     );
