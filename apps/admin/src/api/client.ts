@@ -1,13 +1,11 @@
+import { useAuthStore } from '../stores/useAuthStore';
+
 const RAILWAY_API = import.meta.env.VITE_API_URL || '';
 const BASE = RAILWAY_API ? `${RAILWAY_API}/v1` : '/api';
 
 function getToken(): string | null {
-  try {
-    const raw = localStorage.getItem('lotos-admin-auth');
-    return raw ? (JSON.parse(raw) as { state?: { token?: string } }).state?.token ?? null : null;
-  } catch {
-    return null;
-  }
+  // Read directly from Zustand store (in-memory, always up-to-date after login)
+  return useAuthStore.getState().token;
 }
 
 export async function apiFetch<T = unknown>(
