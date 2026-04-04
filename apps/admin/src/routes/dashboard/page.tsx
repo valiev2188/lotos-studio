@@ -3,12 +3,13 @@ import { apiFetch } from '../../api/client';
 import Header from '../../components/layout/Header';
 
 interface Overview {
-  totalBookingsToday: number;
-  totalRevenueMonth: number;
-  newClientsWeek: number;
+  totalBookings: number;
+  totalAttended: number;
   attendanceRate: number;
-  upcomingClassesToday: number;
+  revenue: number;
+  newClients: number;
   activeSubscriptions: number;
+  occupancyRate: number;
 }
 
 function KpiCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
@@ -24,11 +25,10 @@ function KpiCard({ label, value, sub }: { label: string; value: string | number;
 export default function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-overview'],
-    queryFn: () => apiFetch<{ data: Overview }>('/admin/analytics/overview'),
+    queryFn: () => apiFetch<Overview>('/admin/analytics/overview'),
     refetchInterval: 60_000,
+    retry: 1,
   });
-
-  const kv = data?.data;
 
   return (
     <div>
@@ -42,17 +42,21 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {kv && (
+      {data && (
         <div className="grid grid-cols-3 gap-4">
-          <KpiCard label="Записей сегодня" value={kv.totalBookingsToday} />
+          <KpiCard label="Записей (30 дней)" value={data.totalBookings} />
           <KpiCard
             label="Выручка за месяц"
-            value={new Intl.NumberFormat('ru-UZ', { style: 'currency', currency: 'UZS', maximumFractionDigits: 0 }).format(kv.totalRevenueMonth)}
+            value={new Intl.NumberFormat('ru-UZ', {
+              style: 'currency',
+              currency: 'UZS',
+              maximumFractionDigits: 0,
+            }).format(data.revenue)}
           />
-          <KpiCard label="Новых клиентов за неделю" value={kv.newClientsWeek} />
-          <KpiCard label="Посещаемость" value={`${kv.attendanceRate}%`} sub="за последние 30 дней" />
-          <KpiCard label="Занятий сегодня" value={kv.upcomingClassesToday} />
-          <KpiCard label="Активных абонементов" value={kv.activeSubscriptions} />
+          <KpiCard label="Новых клиентов" value={data.newClients} sub="за 30 дней" />
+          <KpiCard label="Посещаемость" value={`${data.attendanceRate}%`} sub="за последние 30 дней" />
+          <KpiCard label="Посетило занятий" value={data.totalAttended} />
+          <KpiCard label="Активных абонементов" value={data.activeSubscriptions} />
         </div>
       )}
 
