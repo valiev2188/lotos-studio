@@ -1,48 +1,35 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine
 RUN npm install -g pnpm@9
 
-# ---- Install dependencies ----
-FROM base AS deps
 WORKDIR /app
+
+# Copy workspace config
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
-COPY apps/api/package.json ./apps/api/package.json
-COPY packages/types/package.json ./packages/types/package.json
-COPY packages/config/package.json ./packages/config/package.json 2>/dev/null || true
+
+# Copy all package.json files for workspace resolution
+COPY apps/api/package.json ./apps/api/
+COPY packages/types/package.json ./packages/types/
+COPY packages/config/package.json ./packages/config/
+
+# Install all dependencies
 RUN pnpm install --frozen-lockfile
 
-# ---- Build ----
-FROM deps AS builder
-WORKDIR /app
+# Copy source code
 COPY packages/ ./packages/
 COPY apps/api/ ./apps/api/
 COPY prisma/ ./prisma/
+
+# Generate Prisma client
+RUN npx prisma generate --schema=./prisma/schema.prisma
+
+# Build packages
 RUN pnpm --filter @lotos/types build 2>/dev/null || true
-RUN pnpm --filter @lotos/api exec prisma generate --schema=../../prisma/schema.prisma 2>/dev/null || \
-    cd prisma && npx prisma generate
+
+# Build API
 RUN pnpm --filter @lotos/api build
 
-# ---- Production image ----
-FROM node:20-alpine AS runner
-RUN npm install -g pnpm@9
-WORKDIR /app
-
 ENV NODE_ENV=production
-
-COPY --from=builder /app/pnpm-workspace.yaml ./
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/pnpm-lock.yaml ./
-COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
-COPY --from=builder /app/packages/types/package.json ./packages/types/package.json
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules 2>/dev/null || true
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
-COPY --from=builder /app/prisma ./prisma
-
-# Generate Prisma client in production image
-RUN cd /app && npx prisma generate --schema=prisma/schema.prisma 2>/dev/null || true
-
-WORKDIR /app/apps/api
-
 EXPOSE 3001
 
+WORKDIR /app/apps/api
 CMD ["node", "dist/index.js"]
