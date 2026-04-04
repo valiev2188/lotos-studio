@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npx turbo run build --filter=@lotos/landing",
+  "buildCommand": "pnpm --filter @lotos/landing build",
   "outputDirectory": "apps/landing/.next",
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs"
 }
