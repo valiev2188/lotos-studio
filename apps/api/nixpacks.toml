@@ -1,0 +1,18 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "pnpm"]
+
+[phases.install]
+cmds = [
+  "npm install -g pnpm",
+  "pnpm install --frozen-lockfile"
+]
+
+[phases.build]
+cmds = [
+  "cd ../../ && pnpm --filter @lotos/types build 2>/dev/null || true",
+  "pnpm prisma generate",
+  "pnpm build"
+]
+
+[start]
+cmd = "pnpm start"
