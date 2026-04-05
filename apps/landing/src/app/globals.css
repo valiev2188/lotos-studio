@@ -10,7 +10,7 @@
   }
 
   body {
-    @apply bg-estetica-bg text-estetica-text font-onest;
+    @apply bg-lotos-cream text-lotos-text font-instrument;
   }
 
   h1,
@@ -19,39 +19,35 @@
   h4,
   h5,
   h6 {
-    @apply font-onest font-bold;
+    @apply font-syne font-bold;
   }
 
   ::selection {
-    background-color: #b7735933;
-    color: #020100;
+    background-color: #662e9b33;
+    color: #2C1810;
   }
 }
 
 @layer components {
-  /* Minimal utility components for estetica style */
+  .btn-purple {
+    @apply bg-lotos-purple text-white font-semibold rounded-full px-7 py-3 hover:bg-lotos-purpleHover transition-all duration-200 shadow-sm;
+  }
+  .btn-brown {
+    @apply bg-lotos-brown text-white font-semibold rounded-full px-7 py-3 hover:bg-lotos-brownHover transition-all duration-200;
+  }
+  .btn-outline-brown {
+    @apply border-2 border-lotos-brown text-lotos-brown font-semibold rounded-full px-7 py-3 hover:bg-lotos-brownLight transition-all duration-200;
+  }
+  .section-title {
+    @apply font-syne font-bold text-[28px] sm:text-[36px] md:text-[44px] text-lotos-text tracking-tight;
+  }
+  .form-input {
+    @apply w-full rounded-xl border border-lotos-brown/30 bg-white px-4 py-3 text-lotos-text placeholder:text-lotos-muted focus:outline-none focus:ring-2 focus:ring-lotos-purple/40 transition;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-}
-
-/* FAQ accordion */
-details summary {
-  list-style: none;
-  cursor: pointer;
-}
-
-details summary::-webkit-details-marker {
-  display: none;
-}
-
-details[open] summary .faq-chevron {
-  transform: rotate(180deg);
-}
-
-.faq-chevron {
-  transition: transform 0.3s ease;
 }
