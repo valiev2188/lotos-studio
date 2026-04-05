@@ -129,47 +129,65 @@ bot.start(async (ctx) => {
 // ─── Contact handler (регистрация) ───────────────────────────────────────────
 
 bot.on('contact', async (ctx) => {
-  const contact = ctx.message.contact;
+  try {
+    const contact = ctx.message.contact;
 
-  // Проверяем что пользователь поделился своим (не чужим) контактом
-  if (contact.user_id !== ctx.from.id) {
-    await ctx.reply('Пожалуйста, используйте кнопку ниже, чтобы поделиться именно вашим номером.');
-    return;
+    // Проверяем что пользователь поделился своим (не чужим) контактом
+    if (contact.user_id !== undefined && contact.user_id !== ctx.from.id) {
+      await ctx.reply(
+        'Пожалуйста, используйте кнопку «📱 Поделиться номером телефона», чтобы отправить именно ваш контакт.',
+        { reply_markup: Markup.keyboard([[Markup.button.contactRequest('📱 Поделиться номером телефона')]]).resize().oneTime().reply_markup },
+      );
+      return;
+    }
+
+    const rawPhone = contact.phone_number;
+    const phone = rawPhone.startsWith('+') ? rawPhone : `+${rawPhone}`;
+    const tgUser = ctx.from;
+
+    // upsert — безопасно, даже если юзер не создан через /start
+    const user = await prisma.user.upsert({
+      where: { telegramId: BigInt(tgUser.id) },
+      create: {
+        telegramId: BigInt(tgUser.id),
+        firstName: tgUser.first_name,
+        lastName: tgUser.last_name ?? null,
+        username: tgUser.username ?? null,
+        phone,
+      },
+      update: { phone },
+    });
+
+    // Убираем ReplyKeyboard
+    await ctx.reply('✅', { reply_markup: { remove_keyboard: true } });
+
+    // Устанавливаем постоянную кнопку Mini App (некритично если упадёт)
+    await setMenuButton(ctx.chat.id);
+
+    // Показываем сообщение о завершении + кнопки
+    await ctx.reply(REGISTRATION_COMPLETE, {
+      reply_markup: Markup.inlineKeyboard([
+        [Markup.button.webApp('🌸 Открыть приложение', MINIAPP_URL)],
+        [Markup.button.callback('💬 Связаться с администратором', 'contact_admin')],
+      ]).reply_markup,
+    });
+
+    // Уведомляем администратора
+    await notifyAdmin(
+      `🌸 <b>Новый пользователь зарегистрирован!</b>\n\n` +
+      `👤 Имя: ${user.firstName}${user.lastName ? ' ' + user.lastName : ''}\n` +
+      `📞 Телефон: ${phone}\n` +
+      (user.username ? `💬 Username: @${user.username}\n` : '') +
+      `🆔 Telegram ID: ${user.telegramId}`,
+    );
+  } catch (err) {
+    console.error('Contact handler error:', err);
+    // Всегда отвечаем пользователю — даже при ошибке БД
+    await ctx.reply(
+      'Что-то пошло не так 😔 Напишите /start и попробуйте ещё раз.',
+      { reply_markup: { remove_keyboard: true } },
+    ).catch(() => {});
   }
-
-  const rawPhone = contact.phone_number;
-  const phone = rawPhone.startsWith('+') ? rawPhone : `+${rawPhone}`;
-
-  // Сохраняем телефон в БД
-  const user = await prisma.user.update({
-    where: { telegramId: BigInt(ctx.from.id) },
-    data: { phone },
-  });
-
-  // Убираем ReplyKeyboard
-  await ctx.reply('✅', {
-    reply_markup: { remove_keyboard: true },
-  });
-
-  // Устанавливаем постоянную кнопку Mini App
-  await setMenuButton(ctx.chat.id);
-
-  // Показываем сообщение о завершении + кнопку открытия
-  await ctx.reply(REGISTRATION_COMPLETE, {
-    reply_markup: Markup.inlineKeyboard([
-      [Markup.button.webApp('🌸 Открыть приложение', MINIAPP_URL)],
-      [Markup.button.callback('💬 Связаться с администратором', 'contact_admin')],
-    ]).reply_markup,
-  });
-
-  // Уведомляем администратора
-  await notifyAdmin(
-    `🌸 <b>Новый пользователь зарегистрирован!</b>\n\n` +
-    `👤 Имя: ${user.firstName}${user.lastName ? ' ' + user.lastName : ''}\n` +
-    `📞 Телефон: ${phone}\n` +
-    (user.username ? `💬 Username: @${user.username}\n` : '') +
-    `🆔 Telegram ID: ${user.telegramId}`,
-  );
 });
 
 // ─── /schedule ────────────────────────────────────────────────────────────────
