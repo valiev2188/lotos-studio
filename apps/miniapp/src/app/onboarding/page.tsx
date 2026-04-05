@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useUserStore } from '../../stores/useUserStore';
 import { haptic, hapticSuccess } from '../../utils/telegram';
 import { apiFetch } from '../../api/client';
@@ -16,12 +16,26 @@ const GOALS = [
   { value: 'any',     label: 'Всё подряд',    icon: '🌸', desc: 'Хочу попробовать разное' },
 ];
 
+// Шаги онбординга: телефон пропускается если уже заполнен (собран ботом)
+type Step = 'name' | 'phone' | 'goal';
+
 export default function OnboardingPage() {
-  const [step, setStep] = useState(1);
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [goal, setGoal] = useState('');
   const { user } = useUserStore();
+
+  // Если телефон уже есть (собран Telegram-ботом) — пропускаем шаг
+  const steps: Step[] = useMemo(
+    () => (user?.phone ? ['name', 'goal'] : ['name', 'phone', 'goal']),
+    [user?.phone],
+  );
+
+  const [stepIndex, setStepIndex] = useState(0);
+  const [name, setName]   = useState(user?.firstName ?? '');
+  const [phone, setPhone] = useState('');
+  const [goal, setGoal]   = useState('');
+
+  const currentStep = steps[stepIndex];
+  const isLast = stepIndex === steps.length - 1;
+  const totalSteps = steps.length;
 
   async function finish() {
     hapticSuccess();
@@ -29,29 +43,44 @@ export default function OnboardingPage() {
       method: 'PUT',
       body: JSON.stringify({
         firstName: name || undefined,
-        phone: phone || undefined,
+        // Отправляем телефон только если он не был собран ботом
+        phone: !user?.phone && phone ? phone : undefined,
         goal: goal || undefined,
       }),
     });
     window.location.reload();
   }
 
+  function handleNext() {
+    haptic('medium');
+    if (!isLast) {
+      setStepIndex(stepIndex + 1);
+    } else {
+      finish();
+    }
+  }
+
+  function handleBack() {
+    if (stepIndex > 0) setStepIndex(stepIndex - 1);
+  }
+
   return (
     <div className="min-h-screen flex flex-col font-instrument" style={{ background: C.bg }}>
       {/* Progress bar */}
       <div className="flex gap-2 px-5 pt-12 pb-2">
-        {[1, 2, 3].map((s) => (
+        {steps.map((_, i) => (
           <div
-            key={s}
+            key={i}
             className="flex-1 h-1 rounded-full transition-all"
-            style={{ background: s <= step ? C.terra : C.border }}
+            style={{ background: i <= stepIndex ? C.terra : C.border }}
           />
         ))}
       </div>
 
       <div className="flex-1 px-6 py-6">
-        {/* Step 1: Name */}
-        {step === 1 && (
+
+        {/* Step: Name */}
+        {currentStep === 'name' && (
           <div>
             <div className="text-5xl mb-6">👋</div>
             <h2 className="font-syne text-3xl font-bold mb-2" style={{ color: C.bark }}>
@@ -63,18 +92,15 @@ export default function OnboardingPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ваше имя"
+              autoFocus
               className="w-full rounded-2xl px-5 py-4 text-lg outline-none transition-all"
-              style={{
-                background: C.white,
-                border: `1.5px solid ${C.border}`,
-                color: C.bark,
-              }}
+              style={{ background: C.white, border: `1.5px solid ${C.border}`, color: C.bark }}
             />
           </div>
         )}
 
-        {/* Step 2: Phone */}
-        {step === 2 && (
+        {/* Step: Phone (только если не собран ботом) */}
+        {currentStep === 'phone' && (
           <div>
             <div className="text-5xl mb-6">📱</div>
             <h2 className="font-syne text-3xl font-bold mb-2" style={{ color: C.bark }}>
@@ -86,18 +112,15 @@ export default function OnboardingPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+998 90 000 00 00"
+              autoFocus
               className="w-full rounded-2xl px-5 py-4 text-lg outline-none transition-all"
-              style={{
-                background: C.white,
-                border: `1.5px solid ${C.border}`,
-                color: C.bark,
-              }}
+              style={{ background: C.white, border: `1.5px solid ${C.border}`, color: C.bark }}
             />
           </div>
         )}
 
-        {/* Step 3: Goal */}
-        {step === 3 && (
+        {/* Step: Goal */}
+        {currentStep === 'goal' && (
           <div>
             <div className="text-5xl mb-6">🌸</div>
             <h2 className="font-syne text-3xl font-bold mb-2" style={{ color: C.bark }}>
@@ -121,10 +144,7 @@ export default function OnboardingPage() {
                   >
                     <span className="text-2xl">{g.icon}</span>
                     <div>
-                      <div
-                        className="font-syne font-bold"
-                        style={{ color: selected ? C.terra : C.bark }}
-                      >
+                      <div className="font-syne font-bold" style={{ color: selected ? C.terra : C.bark }}>
                         {g.label}
                       </div>
                       <div className="text-xs mt-0.5" style={{ color: C.dust }}>{g.desc}</div>
@@ -140,25 +160,30 @@ export default function OnboardingPage() {
       {/* Navigation */}
       <div className="px-6 pb-10">
         <button
-          onClick={() => {
-            haptic('medium');
-            if (step < 3) setStep(step + 1);
-            else finish();
-          }}
-          className="w-full font-syne font-bold py-4 rounded-full text-lg transition-all active:scale-[0.98]"
+          onClick={handleNext}
+          disabled={
+            (currentStep === 'name' && !name.trim()) ||
+            (currentStep === 'phone' && !phone.trim()) ||
+            (currentStep === 'goal' && !goal)
+          }
+          className="w-full font-syne font-bold py-4 rounded-full text-lg transition-all active:scale-[0.98] disabled:opacity-50"
           style={{ background: C.terra, color: '#fff' }}
         >
-          {step < 3 ? 'Далее →' : 'Начать! 🪷'}
+          {isLast ? 'Начать! 🪷' : 'Далее →'}
         </button>
-        {step > 1 && (
+        {stepIndex > 0 && (
           <button
-            onClick={() => setStep(step - 1)}
+            onClick={handleBack}
             className="w-full mt-3 text-sm text-center"
             style={{ color: C.dust }}
           >
             Назад
           </button>
         )}
+        {/* Шаги */}
+        <p className="text-center text-xs mt-4" style={{ color: C.dust }}>
+          Шаг {stepIndex + 1} из {totalSteps}
+        </p>
       </div>
     </div>
   );
