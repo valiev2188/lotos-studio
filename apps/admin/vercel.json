@@ -3,7 +3,7 @@
   "buildCommand": "cd ../.. && pnpm --filter @lotos/admin build",
   "outputDirectory": "dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
-  "buildEnv": {
+  "env": {
     "VITE_API_URL": "https://lotos-studio-production.up.railway.app"
   }
 }
