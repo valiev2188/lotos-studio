@@ -39,7 +39,7 @@ export default function OnboardingPage() {
 
   async function finish() {
     hapticSuccess();
-    await apiFetch('/users/me', {
+    const updated = await apiFetch<{ user: Record<string, any> }>('/users/me', {
       method: 'PUT',
       body: JSON.stringify({
         firstName: name || undefined,
@@ -48,7 +48,8 @@ export default function OnboardingPage() {
         goal: goal || undefined,
       }),
     });
-    window.location.reload();
+    // Обновляем стор напрямую — без перезагрузки страницы
+    useUserStore.getState().setUser(updated.user ?? { ...user, firstName: name, goal, phone: phone || user?.phone });
   }
 
   function handleNext() {
