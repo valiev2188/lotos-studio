@@ -28,7 +28,10 @@ export default function App() {
     );
   }
 
-  if (isAuthenticated && isNewUser) {
+  // Показываем онбординг если: только что создан (isNewUser) ИЛИ
+  // пользователь создан ботом но не прошёл онбординг (нет goal)
+  const needsOnboarding = isNewUser || (user !== null && !user.goal);
+  if (isAuthenticated && needsOnboarding) {
     return <OnboardingPage />;
   }
 
