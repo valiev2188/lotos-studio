@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
-import { Onest } from "next/font/google";
+import { Syne, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 
-const onest = Onest({
+const syne = Syne({
   subsets: ["latin", "cyrillic"],
-  variable: "--font-onest",
+  variable: "--font-syne",
   display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["600", "700", "800"],
+});
+
+const instrumentSans = Instrument_Sans({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-instrument",
+  display: "swap",
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -39,8 +46,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ru" className={`${onest.variable}`}>
-      <body className="bg-estetica-bg text-estetica-text min-h-screen antialiased">
+    <html lang="ru" className={`${syne.variable} ${instrumentSans.variable}`}>
+      <body className="bg-lotos-cream text-lotos-text min-h-screen antialiased font-instrument">
         {children}
       </body>
     </html>
