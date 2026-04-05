@@ -54,8 +54,8 @@ async function showMainMenu(ctx: Context, user: User) {
 async function setMenuButton(chatId: number) {
   try {
     await bot.telegram.setChatMenuButton({
-      chat_id: chatId,
-      menu_button: {
+      chatId: chatId,
+      menuButton: {
         type: 'web_app',
         text: '🌸 Открыть Лотос',
         web_app: { url: MINIAPP_URL },
