@@ -1,7 +1,7 @@
 import { useAuthStore } from '../stores/useAuthStore';
 
-const RAILWAY_API = import.meta.env.VITE_API_URL || '';
-const BASE = RAILWAY_API ? `${RAILWAY_API}/v1` : '/api';
+const RAILWAY_API = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const BASE = `${RAILWAY_API}/v1`;
 
 function getToken(): string | null {
   // Read directly from Zustand store (in-memory, always up-to-date after login)
