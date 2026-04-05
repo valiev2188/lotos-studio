@@ -3,29 +3,30 @@ RUN npm install -g pnpm@9
 
 WORKDIR /app
 
-# Copy workspace config first
+# Copy workspace manifest files
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 
-# Copy ALL package.json files for workspace resolution
-COPY apps/api/package.json ./apps/api/
+# Copy package.json for each workspace package
 COPY packages/types/package.json ./packages/types/
 COPY packages/config/package.json ./packages/config/
-COPY packages/ui/package.json ./packages/ui/ 2>/dev/null || true
+COPY packages/ui/package.json ./packages/ui/
+COPY apps/api/package.json ./apps/api/
 
-# Copy prisma schema BEFORE install (prisma generate runs as postinstall)
+# Copy Prisma schema BEFORE pnpm install
+# (Prisma runs `prisma generate` as a postinstall hook and needs the schema)
 COPY prisma/ ./prisma/
 
-# Install all dependencies (includes prisma generate postinstall)
+# Install all workspace dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy all source code
 COPY packages/ ./packages/
 COPY apps/api/ ./apps/api/
 
-# Build packages
-RUN pnpm --filter @lotos/types build 2>/dev/null || true
+# Build shared packages first
+RUN pnpm --filter @lotos/types build || true
 
-# Build API
+# Build the API
 RUN pnpm --filter @lotos/api build
 
 ENV NODE_ENV=production
