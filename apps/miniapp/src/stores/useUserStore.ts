@@ -9,6 +9,7 @@ interface UserState {
   isAuthenticated: boolean;
   login: () => Promise<void>;
   logout: () => void;
+  setUser: (user: Record<string, any>) => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
