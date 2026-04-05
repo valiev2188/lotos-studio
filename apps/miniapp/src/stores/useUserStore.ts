@@ -44,4 +44,6 @@ export const useUserStore = create<UserState>((set) => ({
     clearTokens();
     set({ user: null, isAuthenticated: false });
   },
+
+  setUser: (user) => set({ user, isNewUser: false }),
 }));
