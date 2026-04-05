@@ -1,5 +1,5 @@
 {
-  "installCommand": "pnpm install --frozen-lockfile",
+  "installCommand": "pnpm install --frozen-lockfile --ignore-scripts",
   "buildCommand": "pnpm --filter @lotos/landing build",
   "outputDirectory": "apps/landing/.next",
   "framework": "nextjs"
