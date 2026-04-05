@@ -11,7 +11,7 @@ import TrainersPage from './app/trainers/page';
 import ExercisesPage from './app/exercises/page';
 
 export default function App() {
-  const { login, isAuthenticated, isNewUser, isLoading } = useUserStore();
+  const { login, isAuthenticated, isNewUser, isLoading, user } = useUserStore();
 
   useEffect(() => {
     if (!isAuthenticated) login();
