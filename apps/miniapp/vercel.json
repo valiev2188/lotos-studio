@@ -1,5 +1,5 @@
 {
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile --ignore-scripts",
   "buildCommand": "cd ../.. && pnpm --filter @lotos/miniapp build",
   "outputDirectory": "dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
