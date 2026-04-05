@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/client';
 import { haptic, hapticSuccess } from '../../utils/telegram';
@@ -11,30 +11,22 @@ interface ClassItem {
   maxSpots: number;
   level: string;
   status: string;
-  room?: string;
   direction?: { name: string };
   trainer?: { user?: { firstName: string; lastName?: string } };
   _count?: { bookings: number };
 }
 
 const C = {
-  bg: '#FAF5EF',
-  white: '#FFFFFF',
-  bark: '#1C1810',
-  stone: '#8B7355',
-  dust: '#B8A898',
-  terra: '#774936',
-  border: '#EDE4D8',
-  petal: '#F2E9DF',
-  green: '#4CAF50',
-  amber: '#F59E0B',
-  red: '#EF4444',
+  bg: '#FAF5EF', white: '#FFFFFF', bark: '#1C1810',
+  stone: '#8B7355', dust: '#B8A898', terra: '#774936',
+  border: '#EDE4D8', petal: '#F2E9DF',
+  green: '#4CAF50', amber: '#F59E0B', red: '#EF4444',
+  purple: '#662E9B', purpleLight: '#f3ecfb',
 };
 
-const DAY_NAMES   = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
-const DAY_FULL    = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
-const MONTH_NAMES = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-const DIRS        = ['Все','Йога','Пилатес','Стретчинг','Фитнес','Медитация','Барре'];
+const MONTH_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const DOW = ['пн','вт','ср','чт','пт','сб','вс'];
+const DIRS = ['Все','Йога','Пилатес','Стретчинг','Фитнес','Медитация','Барре'];
 
 function toISO(d: Date) { return d.toISOString().slice(0, 10); }
 
@@ -43,51 +35,62 @@ function toTime(iso: string) {
 }
 
 function toEndTime(iso: string, dur: number) {
-  const d = new Date(iso);
-  d.setMinutes(d.getMinutes() + dur);
+  const d = new Date(iso); d.setMinutes(d.getMinutes() + dur);
   return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tashkent' });
 }
 
-function spotsStatus(available: number, max: number): 'ok' | 'few' | 'full' {
-  if (available <= 0) return 'full';
-  if (available <= 3 || available / max < 0.25) return 'few';
-  return 'ok';
+/** Генерирует сетку месяца (6 недель = 42 ячейки) */
+function getMonthGrid(year: number, month: number): Date[] {
+  const first = new Date(year, month, 1);
+  // Понедельник = 0 в нашей сетке
+  let startDay = first.getDay() - 1;
+  if (startDay < 0) startDay = 6; // воскресенье → 6
+
+  const grid: Date[] = [];
+  const start = new Date(first);
+  start.setDate(1 - startDay);
+
+  for (let i = 0; i < 42; i++) {
+    grid.push(new Date(start));
+    start.setDate(start.getDate() + 1);
+  }
+  return grid;
 }
 
 export default function SchedulePage() {
-  const todayBase = new Date();
-  todayBase.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const todayStr = toISO(now);
 
-  // weekOffset: 0 = текущая неделя, 1 = следующая
-  const [weekOffset, setWeekOffset] = useState(0);
-  // Индекс дня в неделе (0=вс … 6=сб)
-  const [dayInWeek, setDayInWeek] = useState(() => new Date().getDay());
+  const [viewMonth, setViewMonth] = useState({ year: now.getFullYear(), month: now.getMonth() });
+  const [selectedDate, setSelectedDate] = useState(todayStr);
   const [dir, setDir] = useState('Все');
   const qc = useQueryClient();
 
-  // Начало отображаемой недели (воскресенье)
-  const weekStart = new Date(todayBase);
-  weekStart.setDate(todayBase.getDate() + weekOffset * 7 - todayBase.getDay());
+  const grid = useMemo(() => getMonthGrid(viewMonth.year, viewMonth.month), [viewMonth.year, viewMonth.month]);
 
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart);
-    d.setDate(weekStart.getDate() + i);
-    return d;
+  // Загружаем весь месяц для точек
+  const monthStart = `${viewMonth.year}-${String(viewMonth.month + 1).padStart(2, '0')}-01`;
+  const monthEndDate = new Date(viewMonth.year, viewMonth.month + 1, 1);
+  const monthEnd = toISO(monthEndDate);
+
+  const { data: monthData } = useQuery({
+    queryKey: ['schedule-month', monthStart],
+    queryFn: () => apiFetch<{ data: ClassItem[] }>(`/schedule?dateFrom=${monthStart}&dateTo=${monthEnd}`),
+    staleTime: 120_000,
   });
 
-  const selectedDate = weekDays[dayInWeek];
-  const nextDate = new Date(selectedDate);
-  nextDate.setDate(selectedDate.getDate() + 1);
+  // Дни с занятиями (для точек)
+  const daysWithClasses = useMemo(() => {
+    const set = new Set<string>();
+    (monthData?.data ?? []).forEach(c => set.add(c.startsAt.slice(0, 10)));
+    return set;
+  }, [monthData]);
 
-  const isToday = toISO(selectedDate) === toISO(todayBase);
-  const headerTitle = `${selectedDate.getDate()} ${MONTH_NAMES[selectedDate.getMonth()]}, ${DAY_FULL[selectedDate.getDay()]}`;
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['schedule', toISO(selectedDate), dir],
-    queryFn: () =>
-      apiFetch<{ data: ClassItem[] }>(
-        `/schedule?dateFrom=${toISO(selectedDate)}&dateTo=${toISO(nextDate)}`,
-      ),
+  // Загружаем занятия на выбранный день
+  const nextDay = toISO(new Date(new Date(selectedDate).getTime() + 86400000));
+  const { data: dayData, isLoading } = useQuery({
+    queryKey: ['schedule-day', selectedDate],
+    queryFn: () => apiFetch<{ data: ClassItem[] }>(`/schedule?dateFrom=${selectedDate}&dateTo=${nextDay}`),
     staleTime: 60_000,
   });
 
@@ -96,94 +99,91 @@ export default function SchedulePage() {
       apiFetch('/bookings', { method: 'POST', body: JSON.stringify({ classId }) }),
     onSuccess: () => {
       hapticSuccess();
-      qc.invalidateQueries({ queryKey: ['schedule'] });
+      qc.invalidateQueries({ queryKey: ['schedule-day'] });
+      qc.invalidateQueries({ queryKey: ['schedule-month'] });
       qc.invalidateQueries({ queryKey: ['bookings'] });
     },
   });
 
-  const classes = (data?.data ?? []).filter(
-    (c) => dir === 'Все' || c.direction?.name === dir,
-  );
+  const classes = (dayData?.data ?? []).filter(c => dir === 'Все' || c.direction?.name === dir);
+
+  function prevMonth() {
+    haptic();
+    setViewMonth(v => v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 });
+  }
+  function nextMonth() {
+    haptic();
+    setViewMonth(v => v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 });
+  }
 
   return (
     <div className="min-h-screen pb-28 font-instrument" style={{ background: C.bg }}>
 
-      {/* ── Header sticky ───────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-10" style={{ background: C.white, boxShadow: '0 1px 0 #EDE4D8' }}>
+      {/* ── Sticky header: Календарь + фильтры ───────────────────────────── */}
+      <div className="sticky top-0 z-10" style={{ background: C.white }}>
 
-        {/* Навигация по неделям */}
+        {/* Месяц навигация */}
         <div className="flex items-center justify-between px-5 pt-10 pb-2">
-          <button
-            onClick={() => { haptic(); setWeekOffset(w => w - 1); }}
-            className="w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold transition-all active:scale-95"
-            style={{ background: C.petal, color: C.terra }}
-          >
-            ‹
-          </button>
-
-          <div className="text-center flex-1 px-2">
-            <p className="font-syne font-bold text-[15px] leading-tight" style={{ color: C.bark }}>
-              {headerTitle}
-            </p>
-            {isToday && (
-              <p className="text-[11px]" style={{ color: C.dust }}>Сегодня</p>
-            )}
-          </div>
-
-          <button
-            onClick={() => { haptic(); setWeekOffset(w => w + 1); }}
-            className="w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold transition-all active:scale-95"
-            style={{ background: C.petal, color: C.terra }}
-          >
-            ›
-          </button>
+          <button onClick={prevMonth} className="w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold active:scale-95" style={{ background: C.petal, color: C.terra }}>‹</button>
+          <p className="font-syne font-bold text-base" style={{ color: C.bark }}>
+            {MONTH_RU[viewMonth.month]} {viewMonth.year}
+          </p>
+          <button onClick={nextMonth} className="w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold active:scale-95" style={{ background: C.petal, color: C.terra }}>›</button>
         </div>
 
-        {/* Полоска 7 дней */}
-        <div className="flex px-3 pb-3 gap-1">
-          {weekDays.map((day, i) => {
-            const active  = i === dayInWeek;
-            const isToday2 = toISO(day) === toISO(todayBase);
-            const past    = day < todayBase && !isToday2;
+        {/* Дни недели */}
+        <div className="grid grid-cols-7 px-3 pb-1">
+          {DOW.map(d => (
+            <div key={d} className="text-center text-[10px] uppercase font-medium" style={{ color: C.dust }}>{d}</div>
+          ))}
+        </div>
+
+        {/* Сетка чисел */}
+        <div className="grid grid-cols-7 px-3 pb-2 gap-y-0.5">
+          {grid.map((day, i) => {
+            const iso = toISO(day);
+            const isCurrentMonth = day.getMonth() === viewMonth.month;
+            const isSelected = iso === selectedDate;
+            const isToday = iso === todayStr;
+            const hasClasses = daysWithClasses.has(iso);
 
             return (
               <button
                 key={i}
-                onClick={() => { haptic(); setDayInWeek(i); }}
-                className="flex-1 flex flex-col items-center py-2 rounded-2xl transition-all active:scale-95"
+                onClick={() => { haptic(); setSelectedDate(iso); }}
+                className="flex flex-col items-center justify-center py-1.5 rounded-xl transition-all active:scale-95"
                 style={{
-                  background: active ? C.terra : isToday2 ? C.petal : 'transparent',
-                  opacity: past ? 0.38 : 1,
+                  background: isSelected ? C.terra : isToday ? C.petal : 'transparent',
+                  opacity: isCurrentMonth ? 1 : 0.25,
                 }}
               >
-                <span
-                  className="font-syne font-bold text-base leading-tight"
-                  style={{ color: active ? '#fff' : isToday2 ? C.terra : C.bark }}
-                >
+                <span className="text-sm font-semibold leading-tight" style={{
+                  color: isSelected ? '#fff' : isToday ? C.terra : C.bark,
+                }}>
                   {day.getDate()}
                 </span>
-                <span
-                  className="text-[10px] uppercase mt-0.5"
-                  style={{ color: active ? 'rgba(255,255,255,0.75)' : isToday2 ? C.terra : C.dust }}
-                >
-                  {DAY_NAMES[day.getDay()]}
-                </span>
+                {/* Точка — есть занятия */}
+                {hasClasses && isCurrentMonth && (
+                  <div className="w-1 h-1 rounded-full mt-0.5" style={{
+                    background: isSelected ? 'rgba(255,255,255,0.7)' : C.purple,
+                  }} />
+                )}
               </button>
             );
           })}
         </div>
 
         {/* Фильтр направлений */}
-        <div className="flex gap-2 overflow-x-auto px-4 pb-3">
-          {DIRS.map((d) => (
+        <div className="flex gap-2 overflow-x-auto px-4 pb-3" style={{ borderBottom: `1px solid ${C.border}` }}>
+          {DIRS.map(d => (
             <button
               key={d}
               onClick={() => { haptic(); setDir(d); }}
               className="flex-shrink-0 text-xs font-medium px-4 py-2 rounded-full border whitespace-nowrap transition-all"
               style={{
-                background:   dir === d ? C.terra : C.white,
-                borderColor:  dir === d ? C.terra : C.border,
-                color:        dir === d ? '#fff' : C.stone,
+                background: dir === d ? C.terra : C.white,
+                borderColor: dir === d ? C.terra : C.border,
+                color: dir === d ? '#fff' : C.stone,
               }}
             >
               {d}
@@ -192,127 +192,85 @@ export default function SchedulePage() {
         </div>
       </div>
 
-      {/* ── Список занятий ───────────────────────────────────────────────── */}
+      {/* ── Список занятий на выбранную дату ─────────────────────────────── */}
       <div className="px-4 py-3 space-y-3">
 
         {isLoading && (
-          <div className="text-center py-16">
-            <div className="text-4xl mb-3 animate-pulse">🌿</div>
-            <p className="text-sm" style={{ color: C.dust }}>Загружаем расписание...</p>
+          <div className="text-center py-12">
+            <div className="text-3xl mb-2 animate-pulse">🌿</div>
+            <p className="text-sm" style={{ color: C.dust }}>Загружаем...</p>
           </div>
         )}
 
         {!isLoading && classes.length === 0 && (
-          <div className="text-center py-16">
-            <div className="text-4xl mb-3">🌿</div>
-            <p className="font-semibold text-sm mb-1" style={{ color: C.bark }}>Занятий нет</p>
+          <div className="text-center py-12">
+            <div className="text-3xl mb-2">🌿</div>
+            <p className="font-semibold text-sm mb-1" style={{ color: C.bark }}>Нет занятий</p>
             <p className="text-xs" style={{ color: C.dust }}>
-              {dir !== 'Все'
-                ? `По направлению «${dir}» занятий не запланировано`
-                : 'На этот день занятий не запланировано'}
+              {dir !== 'Все' ? `По направлению «${dir}» занятий нет` : 'На эту дату занятий нет'}
             </p>
           </div>
         )}
 
-        {classes.map((c) => {
-          const startTime  = toTime(c.startsAt);
-          const endTime    = toEndTime(c.startsAt, c.durationMin);
-          const booked     = c._count?.bookings ?? 0;
-          const available  = c.maxSpots - booked;
-          const status     = spotsStatus(available, c.maxSpots);
-          const isPast     = new Date(c.startsAt) < new Date();
-          const unavailable = c.status !== 'scheduled' || isPast;
-
-          const trainerName = c.trainer?.user
-            ? `${c.trainer.user.firstName}${c.trainer.user.lastName ? ' ' + c.trainer.user.lastName : ''}`
-            : null;
-
-          const statusColor = status === 'full' ? C.red : status === 'few' ? C.amber : C.green;
-          const statusLabel =
-            status === 'full'  ? 'Нет свободных мест' :
-            status === 'few'   ? `Осталось ${available} ${available === 1 ? 'место' : 'места'}` :
-            `Есть свободные места`;
+        {classes.map(c => {
+          const start = toTime(c.startsAt);
+          const end = toEndTime(c.startsAt, c.durationMin);
+          const booked = c._count?.bookings ?? 0;
+          const available = c.maxSpots - booked;
+          const full = available <= 0;
+          const few = !full && (available <= 3);
+          const past = new Date(c.startsAt) < new Date();
+          const disabled = c.status !== 'scheduled' || past || full;
+          const statusColor = full ? C.red : few ? C.amber : C.green;
+          const trainerName = c.trainer?.user ? `${c.trainer.user.firstName}${c.trainer.user.lastName ? ' ' + c.trainer.user.lastName : ''}` : null;
 
           return (
-            <div
-              key={c.id}
-              className="rounded-2xl overflow-hidden"
-              style={{ background: C.white, boxShadow: '0 2px 12px rgba(28,24,16,0.06)' }}
-            >
+            <div key={c.id} className="rounded-2xl overflow-hidden" style={{ background: C.white, boxShadow: '0 2px 12px rgba(28,24,16,0.06)' }}>
               <div className="flex">
-                {/* Цветная полоска-индикатор */}
                 <div className="w-[3px] flex-shrink-0" style={{ background: statusColor }} />
-
                 <div className="flex-1 p-4">
                   <div className="flex items-start gap-3">
                     {/* Время */}
                     <div className="flex-shrink-0 text-right" style={{ minWidth: 42 }}>
-                      <p className="font-syne font-bold text-sm" style={{ color: C.bark }}>{startTime}</p>
-                      <p className="text-[11px] mt-0.5" style={{ color: C.dust }}>{endTime}</p>
+                      <p className="font-syne font-bold text-sm" style={{ color: C.bark }}>{start}</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: C.dust }}>{end}</p>
                     </div>
-
-                    {/* Основная info */}
+                    {/* Info */}
                     <div className="flex-1 min-w-0">
-                      {/* Направление */}
                       {c.direction && (
-                        <span
-                          className="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full mb-1.5"
-                          style={{ background: C.petal, color: C.stone }}
-                        >
+                        <span className="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full mb-1.5" style={{ background: C.petal, color: C.stone }}>
                           {c.direction.name}
                         </span>
                       )}
-
-                      {/* Название */}
-                      <p className="font-syne font-bold text-[14px] leading-snug mb-1.5" style={{ color: C.bark }}>
-                        {c.title}
-                      </p>
-
-                      {/* Места */}
+                      <p className="font-syne font-bold text-[14px] leading-snug mb-1.5" style={{ color: C.bark }}>{c.title}</p>
                       <div className="flex items-center gap-1.5 mb-2">
-                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: statusColor }} />
-                        <p className="text-xs" style={{ color: status === 'full' ? C.red : C.stone }}>
-                          {statusLabel}
+                        <div className="w-2 h-2 rounded-full" style={{ background: statusColor }} />
+                        <p className="text-xs" style={{ color: full ? C.red : C.stone }}>
+                          {full ? 'Нет свободных мест' : few ? `Осталось ${available} мест` : `Есть места (${available} из ${c.maxSpots})`}
                         </p>
                       </div>
-
-                      {/* Тренер */}
                       {trainerName && (
                         <div className="flex items-center gap-1.5">
-                          <div
-                            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                            style={{ background: C.petal, color: C.terra }}
-                          >
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: C.petal, color: C.terra }}>
                             {trainerName[0]}
                           </div>
                           <span className="text-xs" style={{ color: C.stone }}>{trainerName}</span>
                         </div>
                       )}
                     </div>
-
                     {/* Кнопка */}
-                    <div className="flex-shrink-0 self-center">
-                      <button
-                        onClick={() => {
-                          if (unavailable || status === 'full') return;
-                          haptic('medium');
-                          bookMutation.mutate(c.id);
-                        }}
-                        disabled={unavailable || status === 'full' || bookMutation.isPending}
-                        className="text-xs font-semibold px-3.5 py-2.5 rounded-xl transition-all active:scale-95 disabled:opacity-50"
-                        style={{
-                          background: unavailable || status === 'full' ? C.petal : C.terra,
-                          color:      unavailable || status === 'full' ? C.dust  : '#fff',
-                          minWidth: 76,
-                          textAlign: 'center',
-                        }}
-                      >
-                        {bookMutation.isPending ? '...' :
-                          isPast       ? 'Прошло'   :
-                          status === 'full' ? 'Нет мест' :
-                          'Записаться'}
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => { if (!disabled) { haptic('medium'); bookMutation.mutate(c.id); } }}
+                      disabled={disabled || bookMutation.isPending}
+                      className="flex-shrink-0 self-center text-xs font-semibold px-3.5 py-2.5 rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                      style={{
+                        background: disabled ? C.petal : C.terra,
+                        color: disabled ? C.dust : '#fff',
+                        minWidth: 76, textAlign: 'center',
+                      }}
+                    >
+                      {bookMutation.isPending ? '...' : past ? 'Прошло' : full ? 'Нет мест' : 'Записаться'}
+                    </button>
                   </div>
                 </div>
               </div>
