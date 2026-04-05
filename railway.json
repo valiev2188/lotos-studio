@@ -1,13 +1,13 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "DOCKERFILE",
-    "dockerfilePath": "apps/api/Dockerfile"
+    "buildCommand": "npx prisma generate --schema=prisma/schema.prisma && pnpm --filter @lotos/api build"
   },
   "deploy": {
+    "startCommand": "node apps/api/dist/index.js",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 3
+    "restartPolicyMaxRetries": 5
   }
 }
