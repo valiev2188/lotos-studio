@@ -393,7 +393,7 @@ export default function HomePage() {
           </div>
 
           <div className="border-t border-white/15 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-lotos-cream/50 text-sm">© 2025 Студия Лотос. Все права защищены.</p>
+            <p className="text-lotos-cream/50 text-sm">© 2026 Студия Лотос. Все права защищены.</p>
             <div className="flex gap-5 text-sm">
               <a href="#" className="text-lotos-cream/50 hover:text-lotos-cream transition-colors">
                 Политика конфиденциальности
