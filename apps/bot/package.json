@@ -2,10 +2,9 @@
   "name": "@lotos/bot",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsup src/index.ts --format esm",
+    "build": "tsup src/index.ts --format cjs --external @prisma/client --external .prisma --external telegraf --external bullmq --external ioredis",
     "start": "node dist/index.js",
     "lint": "eslint src/"
   },
