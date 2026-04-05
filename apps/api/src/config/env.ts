@@ -5,19 +5,19 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3001),
   HOST: z.string().default('0.0.0.0'),
 
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.string().min(1),
 
   REDIS_URL: z.string().optional(),
 
-  TELEGRAM_BOT_TOKEN: z.string().min(1),
+  TELEGRAM_BOT_TOKEN: z.string().default(''),
   TELEGRAM_BOT_USERNAME: z.string().default('lotos_bot'),
 
-  JWT_SECRET: z.string().min(32),
-  JWT_REFRESH_SECRET: z.string().min(32),
+  JWT_SECRET: z.string().default('dev-secret-change-in-production-32ch'),
+  JWT_REFRESH_SECRET: z.string().default('dev-refresh-secret-change-in-prod32'),
 
-  MINIAPP_URL: z.string().url().default('http://localhost:5173'),
-  ADMIN_URL: z.string().url().default('http://localhost:5174'),
-  LANDING_URL: z.string().url().default('http://localhost:3000'),
+  MINIAPP_URL: z.string().default('http://localhost:5173'),
+  ADMIN_URL: z.string().default('http://localhost:5174'),
+  LANDING_URL: z.string().default('http://localhost:3000'),
 });
 
 export type Env = z.infer<typeof envSchema>;
