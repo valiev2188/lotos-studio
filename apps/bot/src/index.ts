@@ -348,12 +348,16 @@ bot.command('mybookings', async (ctx) => {
       message += `\n${idx + 1}. ${booking.class.title}\n   📅 ${wd}, ${day} ${month} · ${hours}:${mins}\n`;
     });
 
-    const buttons = bookings.map((booking) =>
+    const cancelButtons = bookings.map((booking) =>
       [Markup.button.callback(`❌ Отменить: ${booking.class.title}`, `cancel_booking:${booking.id}`)],
     );
-    buttons.push([Markup.button.webApp('📋 Открыть все записи', `${MINIAPP_URL}?startapp=my-bookings`)]);
 
-    await ctx.reply(message, Markup.inlineKeyboard(buttons));
+    await ctx.reply(message, {
+      reply_markup: Markup.inlineKeyboard([
+        ...cancelButtons,
+        [Markup.button.webApp('📋 Открыть все записи', `${MINIAPP_URL}?startapp=my-bookings`)],
+      ]).reply_markup,
+    });
   } catch (err) {
     console.error('mybookings command error:', err);
     await ctx.reply('Произошла ошибка. Попробуйте позже.').catch(() => {});
