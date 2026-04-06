@@ -15,6 +15,15 @@ dist/
 # Vercel
 .vercel/
 
+# Railway
+.railway/
+
+# Compiled config files
+tailwind.config.js
+tailwind.config.d.ts
+vite.config.js
+vite.config.d.ts
+
 # IDE
 .idea/
 .vscode/
