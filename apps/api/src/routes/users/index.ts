@@ -33,6 +33,7 @@ export async function userRoutes(fastify: FastifyInstance) {
         lastName: z.string().max(100).optional(),
         phone: z.string().max(20).optional(),
         goal: z.enum(['yoga', 'pilates', 'stretch', 'any']).optional(),
+        birthYear: z.number().int().min(1940).max(2015).optional(),
         language: z.enum(['ru', 'uz']).optional(),
       })
       .parse(request.body);
