@@ -9,6 +9,7 @@ import ProfilePage from './app/profile/page';
 import OnboardingPage from './app/onboarding/page';
 import TrainersPage from './app/trainers/page';
 import ExercisesPage from './app/exercises/page';
+import SubscriptionsPage from './app/subscriptions/page';
 
 export default function App() {
   const { login, isAuthenticated, isNewUser, isLoading, user } = useUserStore();
