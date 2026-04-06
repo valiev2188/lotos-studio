@@ -14,6 +14,7 @@ import { directionRoutes } from './routes/directions/index.js';
 import { trainerRoutes } from './routes/trainers/index.js';
 import { exerciseRoutes } from './routes/exercises/index.js';
 import { adminRoutes } from './routes/admin/index.js';
+import { reviewRoutes } from './routes/reviews/index.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
