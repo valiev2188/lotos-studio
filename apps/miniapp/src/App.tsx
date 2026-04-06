@@ -45,6 +45,7 @@ export default function App() {
           <Route path="/my-bookings" element={<MyBookingsPage />} />
           <Route path="/trainers" element={<TrainersPage />} />
           <Route path="/exercises" element={<ExercisesPage />} />
+          <Route path="/subscriptions" element={<SubscriptionsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
