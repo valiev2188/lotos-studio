@@ -71,6 +71,7 @@ async function main() {
     await app.register(trainerRoutes);
     await app.register(exerciseRoutes);
     await app.register(adminRoutes);
+    await app.register(reviewRoutes);
   }, { prefix: '/v1' });
 
   // Health check
