@@ -286,13 +286,181 @@ bot.action(/cancel_booking:(.+)/, async (ctx) => {
   }
 });
 
+// ─── /mybookings ─────────────────────────────────────────────────────────────
+
+bot.command('mybookings', async (ctx) => {
+  try {
+    const tgUser = ctx.from;
+
+    const user = await prisma.user.findUnique({
+      where: { telegramId: BigInt(tgUser.id) },
+    });
+
+    if (!user) {
+      await ctx.reply('Пожалуйста, начните с /start для регистрации.');
+      return;
+    }
+
+    const bookings = await prisma.booking.findMany({
+      where: {
+        userId: user.id,
+        status: 'confirmed',
+        class: { startsAt: { gt: new Date() } },
+      },
+      include: {
+        class: {
+          include: {
+            trainer: { include: { user: true } },
+            direction: true,
+          },
+        },
+      },
+      orderBy: { class: { startsAt: 'asc' } },
+      take: 5,
+    });
+
+    if (bookings.length === 0) {
+      await ctx.reply(
+        'У вас пока нет предстоящих записей.\n\nЗапишитесь на занятие в приложении! 🌸',
+        Markup.inlineKeyboard([
+          [Markup.button.webApp('📅 Открыть расписание', `${MINIAPP_URL}?startapp=schedule`)],
+        ]),
+      );
+      return;
+    }
+
+    const weekdays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+    const months = [
+      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+    ];
+
+    let message = '📋 Ваши предстоящие записи:\n';
+
+    bookings.forEach((booking, idx) => {
+      const dt = new Date(booking.class.startsAt);
+      const wd = weekdays[dt.getUTCDay()];
+      const day = dt.getUTCDate();
+      const month = months[dt.getUTCMonth()];
+      const hours = String(dt.getUTCHours()).padStart(2, '0');
+      const mins = String(dt.getUTCMinutes()).padStart(2, '0');
+
+      message += `\n${idx + 1}. ${booking.class.title}\n   📅 ${wd}, ${day} ${month} · ${hours}:${mins}\n`;
+    });
+
+    const buttons = bookings.map((booking) =>
+      [Markup.button.callback(`❌ Отменить: ${booking.class.title}`, `cancel_booking:${booking.id}`)],
+    );
+    buttons.push([Markup.button.webApp('📋 Открыть все записи', `${MINIAPP_URL}?startapp=my-bookings`)]);
+
+    await ctx.reply(message, Markup.inlineKeyboard(buttons));
+  } catch (err) {
+    console.error('mybookings command error:', err);
+    await ctx.reply('Произошла ошибка. Попробуйте позже.').catch(() => {});
+  }
+});
+
+// ─── Reminder system ────────────────────────────────────────────────────────
+
+async function checkAndSendReminders() {
+  try {
+    const now = new Date();
+    const from = new Date(now.getTime() + 55 * 60 * 1000); // 55 minutes from now
+    const to = new Date(now.getTime() + 65 * 60 * 1000);   // 65 minutes from now
+
+    // Find classes starting in ~1 hour
+    const upcomingClasses = await prisma.class.findMany({
+      where: {
+        startsAt: { gte: from, lte: to },
+        status: 'scheduled',
+      },
+      include: {
+        trainer: { include: { user: true } },
+        direction: true,
+        bookings: {
+          where: { status: 'confirmed' },
+          include: { user: true },
+        },
+      },
+    });
+
+    for (const cls of upcomingClasses) {
+      for (const booking of cls.bookings) {
+        try {
+          // Check if reminder already sent for this user + class
+          const existing = await prisma.notification.findFirst({
+            where: {
+              userId: booking.userId,
+              type: 'reminder_1h',
+              payload: { path: ['classId'], equals: cls.id },
+            },
+          });
+
+          if (existing) continue;
+
+          const telegramId = Number(booking.user.telegramId);
+          const dt = new Date(cls.startsAt);
+          const hours = String(dt.getUTCHours()).padStart(2, '0');
+          const mins = String(dt.getUTCMinutes()).padStart(2, '0');
+          const time = `${hours}:${mins}`;
+
+          const message =
+            `⏰ Напоминание о занятии!\n\n` +
+            `📅 ${cls.title}\n` +
+            `🕐 Начало через 1 час — в ${time}\n` +
+            `👩‍🏫 Тренер: ${cls.trainer.user.firstName}\n` +
+            `📍 ${cls.direction.name}\n\n` +
+            `Хорошей тренировки! 🌸`;
+
+          await bot.telegram.sendMessage(
+            telegramId,
+            message,
+            Markup.inlineKeyboard([
+              [Markup.button.webApp('Открыть приложение', MINIAPP_URL)],
+            ]),
+          );
+
+          // Record notification to avoid duplicates
+          await prisma.notification.create({
+            data: {
+              userId: booking.userId,
+              type: 'reminder_1h',
+              channel: 'telegram',
+              payload: { classId: cls.id, classTitle: cls.title },
+              sentAt: new Date(),
+            },
+          });
+
+          console.log(`Reminder sent to user ${telegramId} for class ${cls.title}`);
+        } catch (err) {
+          console.error(`Failed to send reminder to user ${booking.userId} for class ${cls.id}:`, err);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Reminder check error:', err);
+  }
+}
+
 // ─── Graceful shutdown ────────────────────────────────────────────────────────
 
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+let reminderInterval: ReturnType<typeof setInterval> | null = null;
+
+process.once('SIGINT', () => {
+  if (reminderInterval) clearInterval(reminderInterval);
+  bot.stop('SIGINT');
+});
+process.once('SIGTERM', () => {
+  if (reminderInterval) clearInterval(reminderInterval);
+  bot.stop('SIGTERM');
+});
 
 // ─── Launch ───────────────────────────────────────────────────────────────────
 
 bot.launch().then(() => {
   console.log('🌸 Lotos Bot started in polling mode');
+
+  // Start reminder system: check every 5 minutes
+  reminderInterval = setInterval(checkAndSendReminders, 5 * 60 * 1000);
+  console.log('⏰ Reminder system started (every 5 minutes)');
 });
