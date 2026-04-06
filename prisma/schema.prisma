@@ -101,6 +101,7 @@ model User {
   username   String?   @db.VarChar(100)
   role       UserRole  @default(client)
   goal       UserGoal?
+  birthYear  Int?      @map("birth_year")
   language   Language  @default(ru)
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
