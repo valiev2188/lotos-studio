@@ -79,6 +79,26 @@ export async function bookingRoutes(fastify: FastifyInstance) {
       throw new AppError(409, 'Conflict', 'Already booked for this class');
     }
 
+    // Без абонемента можно записаться только на пробное
+    if (!body.subscriptionId && !body.isTrial) {
+      // Ищем активный абонемент автоматически
+      const autoSub = await fastify.prisma.subscription.findFirst({
+        where: {
+          userId: request.userId,
+          status: 'active',
+          expiresAt: { gt: new Date() },
+        },
+        orderBy: { expiresAt: 'asc' },
+      });
+
+      if (!autoSub || autoSub.usedClasses >= autoSub.totalClasses) {
+        throw new AppError(402, 'Payment Required', 'Active subscription required to book a class');
+      }
+
+      // Используем найденный абонемент
+      body.subscriptionId = autoSub.id;
+    }
+
     if (body.subscriptionId) {
       const sub = await fastify.prisma.subscription.findFirst({
         where: {
