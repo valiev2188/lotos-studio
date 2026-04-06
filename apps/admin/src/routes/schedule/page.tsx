@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../api/client';
 import Header from '../../components/layout/Header';
+import { CheckCircle, AlertCircle, X } from 'lucide-react';
 
 interface ClassItem {
   id: string;
@@ -16,9 +17,20 @@ interface ClassItem {
   _count?: { bookings: number };
 }
 
+interface Trainer {
+  id: string;
+  user?: { firstName: string; lastName?: string };
+}
+
+interface Direction {
+  id: string;
+  name: string;
+}
+
 const MONTH_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const DOW = ['пн','вт','ср','чт','пт','сб','вс'];
 const statusLabels: Record<string, string> = { scheduled: 'Запланировано', cancelled: 'Отменено', done: 'Завершено' };
+const EMPTY_FORM = { title: '', startsAt: '', durationMin: 60, maxSpots: 12, level: 'all', trainerId: '', directionId: '' };
 
 function toISO(d: Date) { return d.toISOString().slice(0, 10); }
 
@@ -44,11 +56,12 @@ export default function SchedulePage() {
   const [viewMonth, setViewMonth] = useState({ year: now.getFullYear(), month: now.getMonth() });
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: '', startsAt: '', durationMin: 60, maxSpots: 12, level: 'all' });
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const grid = useMemo(() => getMonthGrid(viewMonth.year, viewMonth.month), [viewMonth.year, viewMonth.month]);
 
-  // Весь месяц
   const monthStart = `${viewMonth.year}-${String(viewMonth.month + 1).padStart(2, '0')}-01`;
   const monthEnd = toISO(new Date(viewMonth.year, viewMonth.month + 1, 1));
 
@@ -58,7 +71,16 @@ export default function SchedulePage() {
     staleTime: 60_000,
   });
 
-  // Группируем по дням
+  const { data: trainersData } = useQuery({
+    queryKey: ['admin-trainers-for-form'],
+    queryFn: () => apiFetch<{ data: Trainer[] }>('/admin/trainers'),
+  });
+
+  const { data: directionsData } = useQuery({
+    queryKey: ['admin-directions'],
+    queryFn: () => apiFetch<{ data: Direction[] }>('/directions'),
+  });
+
   const classesByDay = useMemo(() => {
     const map: Record<string, ClassItem[]> = {};
     (monthData?.data ?? []).forEach(c => {
@@ -69,16 +91,28 @@ export default function SchedulePage() {
     return map;
   }, [monthData]);
 
-  // Занятия на выбранный день
   const dayClasses = classesByDay[selectedDate] ?? [];
+  const trainers = trainersData?.data ?? [];
+  const directions = directionsData?.data ?? [];
 
   const createMutation = useMutation({
-    mutationFn: (body: typeof form) =>
-      apiFetch('/admin/classes', { method: 'POST', body: JSON.stringify(body) }),
+    mutationFn: (body: typeof form) => {
+      const startsAt = new Date(body.startsAt).toISOString();
+      return apiFetch('/admin/classes', {
+        method: 'POST',
+        body: JSON.stringify({ ...body, startsAt, durationMin: Number(body.durationMin), maxSpots: Number(body.maxSpots) }),
+      });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-schedule-month'] });
       setShowForm(false);
-      setForm({ title: '', startsAt: '', durationMin: 60, maxSpots: 12, level: 'all' });
+      setForm(EMPTY_FORM);
+      setSuccessMsg('Занятие успешно создано!');
+      setTimeout(() => setSuccessMsg(''), 4000);
+    },
+    onError: (err: Error) => {
+      setErrorMsg(err.message || 'Ошибка при создании занятия');
+      setTimeout(() => setErrorMsg(''), 5000);
     },
   });
 
@@ -94,6 +128,8 @@ export default function SchedulePage() {
     setViewMonth(v => v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 });
   }
 
+  const canSubmit = form.title && form.startsAt && form.trainerId && form.directionId;
+
   return (
     <div>
       <Header
@@ -105,6 +141,24 @@ export default function SchedulePage() {
         }
       />
 
+      {/* Уведомление успеха */}
+      {successMsg && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl bg-green-500/20 border border-green-500/40 text-green-400 shadow-lg">
+          <CheckCircle size={18} />
+          <span className="text-sm font-medium">{successMsg}</span>
+          <button onClick={() => setSuccessMsg('')}><X size={14} /></button>
+        </div>
+      )}
+
+      {/* Уведомление ошибки */}
+      {errorMsg && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/20 border border-red-500/40 text-red-400 shadow-lg">
+          <AlertCircle size={18} />
+          <span className="text-sm font-medium">{errorMsg}</span>
+          <button onClick={() => setErrorMsg('')}><X size={14} /></button>
+        </div>
+      )}
+
       {/* Форма создания */}
       {showForm && (
         <div className="card mb-6">
@@ -112,48 +166,102 @@ export default function SchedulePage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-cream/50 text-xs mb-1 block">Название</label>
-              <input className="input" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Йога для начинающих" />
+              <input
+                className="input"
+                value={form.title}
+                onChange={e => setForm({ ...form, title: e.target.value })}
+                placeholder="Йога для начинающих"
+              />
             </div>
             <div>
               <label className="text-cream/50 text-xs mb-1 block">Начало</label>
-              <input type="datetime-local" className="input" value={form.startsAt} onChange={e => setForm({ ...form, startsAt: e.target.value })} />
+              <input
+                type="datetime-local"
+                className="input"
+                value={form.startsAt}
+                onChange={e => setForm({ ...form, startsAt: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-cream/50 text-xs mb-1 block">Тренер</label>
+              <select
+                className="input"
+                value={form.trainerId}
+                onChange={e => setForm({ ...form, trainerId: e.target.value })}
+              >
+                <option value="">Выберите тренера</option>
+                {trainers.map(t => (
+                  <option key={t.id} value={t.id}>
+                    {t.user?.firstName} {t.user?.lastName ?? ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-cream/50 text-xs mb-1 block">Направление</label>
+              <select
+                className="input"
+                value={form.directionId}
+                onChange={e => setForm({ ...form, directionId: e.target.value })}
+              >
+                <option value="">Выберите направление</option>
+                {directions.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="text-cream/50 text-xs mb-1 block">Длительность (мин)</label>
-              <input type="number" className="input" value={form.durationMin} onChange={e => setForm({ ...form, durationMin: +e.target.value })} />
+              <input
+                type="number"
+                className="input"
+                value={form.durationMin}
+                onChange={e => setForm({ ...form, durationMin: +e.target.value })}
+              />
             </div>
             <div>
               <label className="text-cream/50 text-xs mb-1 block">Макс. мест</label>
-              <input type="number" className="input" value={form.maxSpots} onChange={e => setForm({ ...form, maxSpots: +e.target.value })} />
+              <input
+                type="number"
+                className="input"
+                value={form.maxSpots}
+                onChange={e => setForm({ ...form, maxSpots: +e.target.value })}
+              />
             </div>
           </div>
           <div className="flex gap-3 mt-4">
-            <button onClick={() => createMutation.mutate(form)} disabled={createMutation.isPending} className="btn-primary">
+            <button
+              onClick={() => createMutation.mutate(form)}
+              disabled={createMutation.isPending || !canSubmit}
+              className="btn-primary disabled:opacity-50"
+            >
               {createMutation.isPending ? 'Создание...' : 'Создать'}
             </button>
-            <button onClick={() => setShowForm(false)} className="btn-secondary">Отмена</button>
+            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }} className="btn-secondary">
+              Отмена
+            </button>
           </div>
+          {!canSubmit && form.title && (
+            <p className="text-cream/30 text-xs mt-2">Выберите тренера и направление</p>
+          )}
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ── Календарь ──────────────────────────────────────────────────── */}
+        {/* Календарь */}
         <div className="lg:col-span-2 card">
-          {/* Навигация месяца */}
           <div className="flex items-center justify-between mb-4">
             <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg text-cream/40 hover:text-cream hover:bg-dark-50 transition-all">‹</button>
             <p className="font-syne font-bold text-cream">{MONTH_RU[viewMonth.month]} {viewMonth.year}</p>
             <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-lg text-cream/40 hover:text-cream hover:bg-dark-50 transition-all">›</button>
           </div>
 
-          {/* Дни недели */}
           <div className="grid grid-cols-7 mb-1">
             {DOW.map(d => (
               <div key={d} className="text-center text-[11px] text-cream/30 uppercase font-medium py-1">{d}</div>
             ))}
           </div>
 
-          {/* Сетка */}
           <div className="grid grid-cols-7 gap-1">
             {grid.map((day, i) => {
               const iso = toISO(day);
@@ -189,7 +297,7 @@ export default function SchedulePage() {
           </div>
         </div>
 
-        {/* ── Занятия на выбранный день ──────────────────────────────────── */}
+        {/* Занятия на выбранный день */}
         <div className="lg:col-span-1">
           <div className="card">
             <p className="font-syne font-bold text-cream text-sm mb-4">
