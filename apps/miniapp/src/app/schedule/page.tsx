@@ -1,7 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../api/client';
 import { haptic, hapticSuccess } from '../../utils/telegram';
+import { Loader2, Check, X, ChevronLeft, ChevronRight, AlertCircle, Ticket } from 'lucide-react';
 
 interface ClassItem {
   id: string;
@@ -14,6 +16,22 @@ interface ClassItem {
   direction?: { name: string };
   trainer?: { user?: { firstName: string; lastName?: string } };
   _count?: { bookings: number };
+}
+
+interface Sub {
+  id: string;
+  status: string;
+  totalClasses: number;
+  usedClasses: number;
+  remainingClasses: number;
+  expiresAt: string;
+  plan: { name: string };
+}
+
+interface BookingItem {
+  id: string;
+  classId: string;
+  status: string;
 }
 
 const C = {
@@ -39,17 +57,13 @@ function toEndTime(iso: string, dur: number) {
   return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tashkent' });
 }
 
-/** Генерирует сетку месяца (6 недель = 42 ячейки) */
 function getMonthGrid(year: number, month: number): Date[] {
   const first = new Date(year, month, 1);
-  // Понедельник = 0 в нашей сетке
   let startDay = first.getDay() - 1;
-  if (startDay < 0) startDay = 6; // воскресенье → 6
-
+  if (startDay < 0) startDay = 6;
   const grid: Date[] = [];
   const start = new Date(first);
   start.setDate(1 - startDay);
-
   for (let i = 0; i < 42; i++) {
     grid.push(new Date(start));
     start.setDate(start.getDate() + 1);
@@ -57,21 +71,124 @@ function getMonthGrid(year: number, month: number): Date[] {
   return grid;
 }
 
+// ─── Success Alert ───────────────────────────────────────────────────────────
+function SuccessAlert({ show, onClose, className }: { show: boolean; onClose: () => void; className?: string }) {
+  if (!show) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/30" />
+      <div
+        className={`relative bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-xl ${className ?? ''}`}
+        onClick={(e) => e.stopPropagation()}
+        style={{ animation: 'fadeIn 0.2s ease-out' }}
+      >
+        <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: '#E8F5E9' }}>
+          <Check size={32} color={C.green} strokeWidth={3} />
+        </div>
+        <h3 className="font-syne font-bold text-xl mb-2" style={{ color: C.bark }}>Вы записаны!</h3>
+        <p className="text-sm mb-6" style={{ color: C.stone }}>
+          Занятие добавлено в ваши записи. Мы напомним вам за час до начала.
+        </p>
+        <button
+          onClick={onClose}
+          className="w-full py-3 rounded-full font-semibold text-sm transition-all active:scale-95"
+          style={{ background: C.terra, color: '#fff' }}
+        >
+          Отлично!
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── No Subscription Alert ───────────────────────────────────────────────────
+function NoSubAlert({ show, onClose, onBuy }: { show: boolean; onClose: () => void; onBuy: () => void }) {
+  if (!show) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/30" />
+      <div
+        className="relative bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+        style={{ animation: 'fadeIn 0.2s ease-out' }}
+      >
+        <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: '#FFF3E0' }}>
+          <Ticket size={32} color={C.amber} />
+        </div>
+        <h3 className="font-syne font-bold text-xl mb-2" style={{ color: C.bark }}>Нужен абонемент</h3>
+        <p className="text-sm mb-6" style={{ color: C.stone }}>
+          Для записи на занятие необходим активный абонемент. Приобретите абонемент или запишитесь на пробное занятие.
+        </p>
+        <div className="space-y-2">
+          <button
+            onClick={onBuy}
+            className="w-full py-3 rounded-full font-semibold text-sm transition-all active:scale-95"
+            style={{ background: C.terra, color: '#fff' }}
+          >
+            Купить абонемент
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-full font-semibold text-sm transition-all active:scale-95"
+            style={{ background: C.petal, color: C.stone }}
+          >
+            Закрыть
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Error Alert ─────────────────────────────────────────────────────────────
+function ErrorAlert({ show, message, onClose }: { show: boolean; message: string; onClose: () => void }) {
+  if (!show) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/30" />
+      <div
+        className="relative bg-white rounded-3xl p-8 text-center max-w-sm w-full shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+        style={{ animation: 'fadeIn 0.2s ease-out' }}
+      >
+        <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: '#FFEBEE' }}>
+          <AlertCircle size={32} color={C.red} />
+        </div>
+        <h3 className="font-syne font-bold text-xl mb-2" style={{ color: C.bark }}>Ошибка</h3>
+        <p className="text-sm mb-6" style={{ color: C.stone }}>{message}</p>
+        <button
+          onClick={onClose}
+          className="w-full py-3 rounded-full font-semibold text-sm transition-all active:scale-95"
+          style={{ background: C.petal, color: C.bark }}
+        >
+          Понятно
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────────────
+
 export default function SchedulePage() {
   const now = new Date();
   const todayStr = toISO(now);
+  const navigate = useNavigate();
+  const qc = useQueryClient();
 
   const [viewMonth, setViewMonth] = useState({ year: now.getFullYear(), month: now.getMonth() });
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [dir, setDir] = useState('Все');
-  const qc = useQueryClient();
+  const [bookingClassId, setBookingClassId] = useState<string | null>(null); // which class is being booked
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showNoSub, setShowNoSub] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const grid = useMemo(() => getMonthGrid(viewMonth.year, viewMonth.month), [viewMonth.year, viewMonth.month]);
 
-  // Загружаем весь месяц для точек
+  // ── Data queries ───────────────────────────────────────────
   const monthStart = `${viewMonth.year}-${String(viewMonth.month + 1).padStart(2, '0')}-01`;
-  const monthEndDate = new Date(viewMonth.year, viewMonth.month + 1, 1);
-  const monthEnd = toISO(monthEndDate);
+  const monthEnd = toISO(new Date(viewMonth.year, viewMonth.month + 1, 1));
 
   const { data: monthData } = useQuery({
     queryKey: ['schedule-month', monthStart],
@@ -79,14 +196,12 @@ export default function SchedulePage() {
     staleTime: 120_000,
   });
 
-  // Дни с занятиями (для точек)
   const daysWithClasses = useMemo(() => {
     const set = new Set<string>();
     (monthData?.data ?? []).forEach(c => set.add(c.startsAt.slice(0, 10)));
     return set;
   }, [monthData]);
 
-  // Загружаем занятия на выбранный день
   const nextDay = toISO(new Date(new Date(selectedDate).getTime() + 86400000));
   const { data: dayData, isLoading } = useQuery({
     queryKey: ['schedule-day', selectedDate],
@@ -94,16 +209,76 @@ export default function SchedulePage() {
     staleTime: 60_000,
   });
 
+  // Активный абонемент
+  const { data: subsData } = useQuery({
+    queryKey: ['subscriptions'],
+    queryFn: () => apiFetch<{ data: Sub[] }>('/subscriptions'),
+    staleTime: 120_000,
+  });
+
+  const activeSub = useMemo(() => {
+    const subs = subsData?.data ?? [];
+    return subs.find(s => s.status === 'active' && new Date(s.expiresAt) > new Date() && s.remainingClasses > 0) ?? null;
+  }, [subsData]);
+
+  // Мои существующие записи (чтобы показать "Вы записаны")
+  const { data: myBookingsData } = useQuery({
+    queryKey: ['bookings'],
+    queryFn: () => apiFetch<{ data: BookingItem[] }>('/bookings'),
+    staleTime: 60_000,
+  });
+
+  const bookedClassIds = useMemo(() => {
+    const set = new Set<string>();
+    (myBookingsData?.data ?? []).forEach(b => {
+      if (b.status !== 'cancelled') set.add(b.classId);
+    });
+    return set;
+  }, [myBookingsData]);
+
+  // ── Book mutation ──────────────────────────────────────────
   const bookMutation = useMutation({
-    mutationFn: (classId: string) =>
-      apiFetch('/bookings', { method: 'POST', body: JSON.stringify({ classId }) }),
+    mutationFn: ({ classId, subscriptionId, isTrial }: { classId: string; subscriptionId?: string; isTrial?: boolean }) =>
+      apiFetch('/bookings', {
+        method: 'POST',
+        body: JSON.stringify({ classId, subscriptionId, isTrial: isTrial ?? false }),
+      }),
     onSuccess: () => {
       hapticSuccess();
+      setBookingClassId(null);
+      setShowSuccess(true);
       qc.invalidateQueries({ queryKey: ['schedule-day'] });
       qc.invalidateQueries({ queryKey: ['schedule-month'] });
       qc.invalidateQueries({ queryKey: ['bookings'] });
+      qc.invalidateQueries({ queryKey: ['subscriptions'] });
+    },
+    onError: (err: Error) => {
+      setBookingClassId(null);
+      const msg = err.message || 'Не удалось записаться';
+      if (msg.includes('Already booked')) {
+        setErrorMsg('Вы уже записаны на это занятие');
+      } else if (msg.includes('No available spots')) {
+        setErrorMsg('Все места заняты');
+      } else if (msg.includes('Invalid or exhausted subscription')) {
+        setErrorMsg('Абонемент закончился. Необходимо приобрести новый.');
+      } else {
+        setErrorMsg(msg);
+      }
     },
   });
+
+  const handleBook = useCallback((classId: string) => {
+    haptic('medium');
+
+    // Проверяем есть ли абонемент
+    if (!activeSub) {
+      setShowNoSub(true);
+      return;
+    }
+
+    setBookingClassId(classId);
+    bookMutation.mutate({ classId, subscriptionId: activeSub.id });
+  }, [activeSub, bookMutation]);
 
   const classes = (dayData?.data ?? []).filter(c => dir === 'Все' || c.direction?.name === dir);
 
@@ -119,16 +294,59 @@ export default function SchedulePage() {
   return (
     <div className="min-h-screen pb-28 font-instrument" style={{ background: C.bg }}>
 
-      {/* ── Sticky header: Календарь + фильтры ───────────────────────────── */}
-      <div className="sticky top-0 z-10" style={{ background: C.white }}>
+      {/* ── Alerts ─────────────────────────────────────────── */}
+      <SuccessAlert show={showSuccess} onClose={() => setShowSuccess(false)} />
+      <NoSubAlert show={showNoSub} onClose={() => setShowNoSub(false)} onBuy={() => { setShowNoSub(false); navigate('/profile'); }} />
+      <ErrorAlert show={!!errorMsg} message={errorMsg} onClose={() => setErrorMsg('')} />
+
+      {/* ── Абонемент баннер ───────────────────────────────── */}
+      {activeSub && (
+        <div className="mx-4 mt-2 mb-0 px-4 py-2.5 rounded-2xl flex items-center justify-between"
+             style={{ background: C.purpleLight, border: `1px solid ${C.purple}20` }}>
+          <div className="flex items-center gap-2">
+            <Ticket size={16} color={C.purple} />
+            <span className="text-xs font-medium" style={{ color: C.purple }}>
+              {activeSub.plan.name}
+            </span>
+          </div>
+          <span className="text-xs font-bold" style={{ color: C.purple }}>
+            {activeSub.remainingClasses} из {activeSub.totalClasses} занятий
+          </span>
+        </div>
+      )}
+
+      {!activeSub && (
+        <button
+          onClick={() => navigate('/profile')}
+          className="mx-4 mt-2 mb-0 px-4 py-2.5 rounded-2xl flex items-center justify-between w-[calc(100%-2rem)] active:scale-[0.98] transition-all"
+          style={{ background: '#FFF3E0', border: `1px solid ${C.amber}30` }}
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle size={16} color={C.amber} />
+            <span className="text-xs font-medium" style={{ color: '#E65100' }}>
+              Нет активного абонемента
+            </span>
+          </div>
+          <span className="text-xs font-semibold" style={{ color: C.terra }}>
+            Купить →
+          </span>
+        </button>
+      )}
+
+      {/* ── Sticky header: Календарь + фильтры ─────────────── */}
+      <div className="sticky top-0 z-10 mt-2" style={{ background: C.white }}>
 
         {/* Месяц навигация */}
-        <div className="flex items-center justify-between px-5 pt-10 pb-2">
-          <button onClick={prevMonth} className="w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold active:scale-95" style={{ background: C.petal, color: C.terra }}>‹</button>
+        <div className="flex items-center justify-between px-5 pt-4 pb-2">
+          <button onClick={prevMonth} className="w-9 h-9 flex items-center justify-center rounded-full active:scale-95" style={{ background: C.petal }}>
+            <ChevronLeft size={18} color={C.terra} />
+          </button>
           <p className="font-syne font-bold text-base" style={{ color: C.bark }}>
             {MONTH_RU[viewMonth.month]} {viewMonth.year}
           </p>
-          <button onClick={nextMonth} className="w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold active:scale-95" style={{ background: C.petal, color: C.terra }}>›</button>
+          <button onClick={nextMonth} className="w-9 h-9 flex items-center justify-center rounded-full active:scale-95" style={{ background: C.petal }}>
+            <ChevronRight size={18} color={C.terra} />
+          </button>
         </div>
 
         {/* Дни недели */}
@@ -162,7 +380,6 @@ export default function SchedulePage() {
                 }}>
                   {day.getDate()}
                 </span>
-                {/* Точка — есть занятия */}
                 {hasClasses && isCurrentMonth && (
                   <div className="w-1 h-1 rounded-full mt-0.5" style={{
                     background: isSelected ? 'rgba(255,255,255,0.7)' : C.purple,
@@ -192,19 +409,21 @@ export default function SchedulePage() {
         </div>
       </div>
 
-      {/* ── Список занятий на выбранную дату ─────────────────────────────── */}
+      {/* ── Список занятий ─────────────────────────────────── */}
       <div className="px-4 py-3 space-y-3">
 
         {isLoading && (
-          <div className="text-center py-12">
-            <div className="text-3xl mb-2 animate-pulse">🌿</div>
+          <div className="flex flex-col items-center py-12">
+            <Loader2 size={32} color={C.terra} className="animate-spin mb-3" />
             <p className="text-sm" style={{ color: C.dust }}>Загружаем...</p>
           </div>
         )}
 
         {!isLoading && classes.length === 0 && (
           <div className="text-center py-12">
-            <div className="text-3xl mb-2">🌿</div>
+            <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: C.petal }}>
+              <X size={20} color={C.dust} />
+            </div>
             <p className="font-semibold text-sm mb-1" style={{ color: C.bark }}>Нет занятий</p>
             <p className="text-xs" style={{ color: C.dust }}>
               {dir !== 'Все' ? `По направлению «${dir}» занятий нет` : 'На эту дату занятий нет'}
@@ -218,16 +437,47 @@ export default function SchedulePage() {
           const booked = c._count?.bookings ?? 0;
           const available = c.maxSpots - booked;
           const full = available <= 0;
-          const few = !full && (available <= 3);
+          const few = !full && available <= 3;
           const past = new Date(c.startsAt) < new Date();
-          const disabled = c.status !== 'scheduled' || past || full;
+          const alreadyBooked = bookedClassIds.has(c.id);
+          const isBookingThis = bookingClassId === c.id && bookMutation.isPending;
+          const canBook = c.status === 'scheduled' && !past && !full && !alreadyBooked;
           const statusColor = full ? C.red : few ? C.amber : C.green;
           const trainerName = c.trainer?.user ? `${c.trainer.user.firstName}${c.trainer.user.lastName ? ' ' + c.trainer.user.lastName : ''}` : null;
+
+          // Определяем текст и стиль кнопки
+          let btnText = 'Записаться';
+          let btnBg = C.terra;
+          let btnColor = '#fff';
+          let btnDisabled = false;
+
+          if (isBookingThis) {
+            btnText = '';
+            btnBg = C.terra;
+          } else if (alreadyBooked) {
+            btnText = 'Записаны';
+            btnBg = '#E8F5E9';
+            btnColor = C.green;
+            btnDisabled = true;
+          } else if (past) {
+            btnText = 'Прошло';
+            btnBg = C.petal;
+            btnColor = C.dust;
+            btnDisabled = true;
+          } else if (full) {
+            btnText = 'Нет мест';
+            btnBg = C.petal;
+            btnColor = C.dust;
+            btnDisabled = true;
+          } else if (!activeSub) {
+            btnText = 'Записаться';
+            btnBg = C.terra;
+          }
 
           return (
             <div key={c.id} className="rounded-2xl overflow-hidden" style={{ background: C.white, boxShadow: '0 2px 12px rgba(28,24,16,0.06)' }}>
               <div className="flex">
-                <div className="w-[3px] flex-shrink-0" style={{ background: statusColor }} />
+                <div className="w-[3px] flex-shrink-0" style={{ background: alreadyBooked ? C.green : statusColor }} />
                 <div className="flex-1 p-4">
                   <div className="flex items-start gap-3">
                     {/* Время */}
@@ -244,9 +494,14 @@ export default function SchedulePage() {
                       )}
                       <p className="font-syne font-bold text-[14px] leading-snug mb-1.5" style={{ color: C.bark }}>{c.title}</p>
                       <div className="flex items-center gap-1.5 mb-2">
-                        <div className="w-2 h-2 rounded-full" style={{ background: statusColor }} />
-                        <p className="text-xs" style={{ color: full ? C.red : C.stone }}>
-                          {full ? 'Нет свободных мест' : few ? `Осталось ${available} мест` : `Есть места (${available} из ${c.maxSpots})`}
+                        <div className="w-2 h-2 rounded-full" style={{ background: alreadyBooked ? C.green : statusColor }} />
+                        <p className="text-xs" style={{ color: alreadyBooked ? C.green : full ? C.red : C.stone }}>
+                          {alreadyBooked
+                            ? `Вы записаны (${booked}/${c.maxSpots})`
+                            : full ? 'Нет свободных мест'
+                            : few ? `Осталось ${available} мест`
+                            : `Есть места (${available} из ${c.maxSpots})`
+                          }
                         </p>
                       </div>
                       {trainerName && (
@@ -260,16 +515,25 @@ export default function SchedulePage() {
                     </div>
                     {/* Кнопка */}
                     <button
-                      onClick={() => { if (!disabled) { haptic('medium'); bookMutation.mutate(c.id); } }}
-                      disabled={disabled || bookMutation.isPending}
-                      className="flex-shrink-0 self-center text-xs font-semibold px-3.5 py-2.5 rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                      onClick={() => canBook ? handleBook(c.id) : undefined}
+                      disabled={btnDisabled || isBookingThis}
+                      className="flex-shrink-0 self-center text-xs font-semibold px-3.5 py-2.5 rounded-xl transition-all active:scale-95 disabled:active:scale-100"
                       style={{
-                        background: disabled ? C.petal : C.terra,
-                        color: disabled ? C.dust : '#fff',
-                        minWidth: 76, textAlign: 'center',
+                        background: btnBg,
+                        color: btnColor,
+                        minWidth: 86,
+                        textAlign: 'center',
+                        opacity: btnDisabled ? 0.7 : 1,
                       }}
                     >
-                      {bookMutation.isPending ? '...' : past ? 'Прошло' : full ? 'Нет мест' : 'Записаться'}
+                      {isBookingThis ? (
+                        <Loader2 size={16} className="animate-spin mx-auto" color="#fff" />
+                      ) : (
+                        <>
+                          {alreadyBooked && <Check size={12} className="inline mr-1" style={{ marginTop: -1 }} />}
+                          {btnText}
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -278,6 +542,14 @@ export default function SchedulePage() {
           );
         })}
       </div>
+
+      {/* Animation keyframes */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 }
