@@ -74,7 +74,7 @@ export default function ProfilePage() {
             )}
             {age && (
               <p className="text-xs mt-0.5" style={{ color: C.stone }}>
-                {user.birthYear} г.р. ({age} {age % 10 === 1 && age % 100 !== 11 ? 'год' : (age % 10 >= 2 && age % 10 <= 4 && (age % 100 < 10 || age % 100 >= 20)) ? 'года' : 'лет'})
+                {user?.birthYear} г.р. ({age} {age % 10 === 1 && age % 100 !== 11 ? 'год' : (age % 10 >= 2 && age % 10 <= 4 && (age % 100 < 10 || age % 100 >= 20)) ? 'года' : 'лет'})
               </p>
             )}
           </div>
