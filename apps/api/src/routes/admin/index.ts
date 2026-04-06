@@ -360,6 +360,98 @@ export async function adminRoutes(fastify: FastifyInstance) {
     return reply.send({ success: true });
   });
 
+  // ── Trainers CRUD ────────────────────────────────
+  fastify.get('/admin/trainers', { preHandler: requirePermission('schedule') }, async (request, reply) => {
+    const trainers = await fastify.prisma.trainer.findMany({
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, username: true } },
+        _count: { select: { classes: true, exercises: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    return reply.send({ data: trainers });
+  });
+
+  fastify.post('/admin/trainers', { preHandler: requirePermission('schedule') }, async (request, reply) => {
+    const body = z.object({
+      firstName: z.string().min(1).max(100),
+      lastName: z.string().max(100).optional(),
+      bio: z.string().optional(),
+      experienceYears: z.number().min(0).default(0),
+      specializations: z.array(z.string()).default([]),
+      photoUrl: z.string().url().optional().or(z.literal('')),
+      isActive: z.boolean().default(true),
+    }).parse(request.body);
+
+    const user = await fastify.prisma.user.create({
+      data: {
+        telegramId: BigInt(-Date.now()),
+        firstName: body.firstName,
+        lastName: body.lastName ?? null,
+        role: 'trainer',
+      },
+    });
+
+    const trainer = await fastify.prisma.trainer.create({
+      data: {
+        userId: user.id,
+        bio: body.bio ?? null,
+        experienceYears: body.experienceYears,
+        specializations: body.specializations,
+        photoUrl: body.photoUrl || null,
+        isActive: body.isActive,
+      },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, username: true } },
+        _count: { select: { classes: true, exercises: true } },
+      },
+    });
+
+    return reply.status(201).send(trainer);
+  });
+
+  fastify.put('/admin/trainers/:id', { preHandler: requirePermission('schedule') }, async (request, reply) => {
+    const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+    const body = z.object({
+      firstName: z.string().min(1).max(100).optional(),
+      lastName: z.string().max(100).optional(),
+      bio: z.string().optional(),
+      experienceYears: z.number().min(0).optional(),
+      specializations: z.array(z.string()).optional(),
+      photoUrl: z.string().url().optional().or(z.literal('')),
+      isActive: z.boolean().optional(),
+    }).parse(request.body);
+
+    const existing = await fastify.prisma.trainer.findUnique({ where: { id } });
+    if (!existing) throw new AppError(404, 'Not Found', 'Trainer not found');
+
+    const { firstName, lastName, ...trainerFields } = body;
+
+    if (firstName !== undefined || lastName !== undefined) {
+      await fastify.prisma.user.update({
+        where: { id: existing.userId },
+        data: {
+          ...(firstName !== undefined ? { firstName } : {}),
+          ...(lastName !== undefined ? { lastName } : {}),
+        },
+      });
+    }
+
+    const trainer = await fastify.prisma.trainer.update({
+      where: { id },
+      data: {
+        ...trainerFields,
+        photoUrl: body.photoUrl === '' ? null : (body.photoUrl ?? undefined),
+      },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, username: true } },
+        _count: { select: { classes: true, exercises: true } },
+      },
+    });
+
+    return reply.send(trainer);
+  });
+
   // Обзор отзывов для админа
   fastify.get('/admin/reviews', { preHandler: requirePermission('clients') }, async (request, reply) => {
     const query = z.object({
