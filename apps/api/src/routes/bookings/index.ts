@@ -52,7 +52,7 @@ export async function bookingRoutes(fastify: FastifyInstance) {
         isTrial: z.boolean().default(false),
         subscriptionId: z.string().uuid().optional(),
       })
-      .parse(request.body);
+      .parse(request.body) as { classId: string; isTrial: boolean; subscriptionId?: string };
 
     const cls = await fastify.prisma.class.findUnique({
       where: { id: body.classId },
