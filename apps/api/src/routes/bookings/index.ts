@@ -158,9 +158,15 @@ export async function bookingRoutes(fastify: FastifyInstance) {
 
     const hoursUntilClass =
       (new Date(booking.class.startsAt).getTime() - Date.now()) / (1000 * 60 * 60);
+
+    // Нельзя отменить если до занятия менее 1 часа
+    if (hoursUntilClass < 1) {
+      throw new AppError(400, 'Bad Request', 'Cannot cancel less than 1 hour before class');
+    }
+
     let refundedToSubscription = false;
 
-    if (hoursUntilClass > 2 && booking.subscriptionId) {
+    if (hoursUntilClass >= 1 && booking.subscriptionId) {
       await fastify.prisma.subscription.update({
         where: { id: booking.subscriptionId },
         data: { usedClasses: { decrement: 1 } },
